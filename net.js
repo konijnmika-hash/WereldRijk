@@ -65,7 +65,7 @@
         if (first) { first = false; res(c); }
       });
       c.on('error', () => {});
-      setTimeout(() => { if (first) { first = false; res(null); } }, 9000);
+      setTimeout(() => { if (first) { first = false; try { c.end(true); } catch (e) {} res(null); } }, 9000);
     });
   }
 
