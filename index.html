@@ -625,6 +625,19 @@ function defFront(def,att,naval,c){if(c==null)c=bestTheater(att,def);const fs=fr
   const g=N.a[c]*fs,mil=stats()[def].cp[c]*1e6*.0014*fs;const s=Math.max(g,mil);
   const tk=N.ka[c]*fs,jt=K.jt*clamp(frontShare(def,att)*2,.25,1),sh=naval?K.sh:K.sh*fs*.5;
   return {s,tk,jt,sh,p:s+tk*TK_D+jt*JT+sh*SH_D+1,fs,c,g:N.a[c],mil:g<mil}}
+// One estimate for the panel, the attack sheet and the AI: effective strength on both sides, with every bonus that the battle uses.
+function capFront(att,def,c){for(const [r] of frontRegions(att,def,c))if(R0[r].cap&&R0[r].n0===def)return true;return false}
+function defBonus(att,def,c){const T=frontTerrain(att,def,c),ND=G.N[def],cap=capFront(att,def,c),parts=[];
+  parts.push(['Thuisvoordeel',HOME]);if(ul(def,'vl'))parts.push(['Forten',defMult(def)]);if(ND.last)parts.push(['Vecht tot het einde',1.3*1.2]);
+  if(isHuman(def)&&(MODE().def||1)>1)parts.push(['Moeilijkheid',MODE().def]);if(T.main||T.d>1.02)parts.push([T.main?TERR[T.main].nm:'Terrein',T.d]);
+  if(cap)parts.push(['Hoofdstad',1.12*1.15]);if((ND.we||0)>10)parts.push(['Oorlogsmoe',1-(ND.we||0)/250]);
+  return {T,cap,parts,m:parts.reduce((x,p)=>x*p[1],1)}}
+function attackEst(att,def,c,u){const naval=isNaval(att,def,c),E=defFront(def,att,naval,c),D=defBonus(att,def,c),T=D.T;
+  const raw=(u.sd||0)+unitPow({tk:u.tk||0,jt:u.jt||0,sh:u.sh||0},true,naval);
+  const eff=(u.sd||0)+unitPow({tk:(u.tk||0)*T.tk,jt:(u.jt||0)*(T.main==='jun'?.75:1),sh:u.sh||0},true,naval);
+  const am=atkMult(att)*(naval?.85:1)*(srcCont(att,def,c)!==c?.9:1);
+  const bk=Math.min(E.g,(u.bm||0)*190/defMult(def))*E.fs;
+  const ap=eff*am,dp=Math.max(1,E.p-bk)*D.m;return {E,D,T,naval,raw,ap,am,dp,r:ap/(dp+1)}}
 function attPow(B){return B.a+B.tk*TK_A+B.jt*JT+B.sh*(B.naval?SH_A:60)}
 function startBattle(att,def,send,maxSteps,u,c){
   u=u||{};(G.N[att].hitR=G.N[att].hitR||{})[def]=G.round;
@@ -755,7 +768,7 @@ function aiThreats(){
   for(let r=0;r<NR;r++){const o=G.R.o[r];const el=R0[r].el;for(const k in el){const p=G.R.o[+k];if(p===o)continue;BL[o].set(p,(BL[o].get(p)||0)+el[k]);TOT[o]+=el[k]}}
   G.coal=G.coal||{};const agg=MODE().agg;
   for(let x=0;x<NN;x++){
-    if(G.N[x].dead||!BL[x].size)continue;
+    if(G.N[x].dead||!BL[x].size||(isHuman(x)&&G.round<=(MODE().grace||0)))continue;
     const grow=s[x].km/(KM0[x]||s[x].km||1),cq=G.N[x].cq||0,big=s[x].power+1;
     if(grow<1.12&&cq<2)continue;
     const fear=[];
@@ -1086,12 +1099,12 @@ function renderPanel(){
     else if(!reach)h+=`<div class="note">Je kunt ${esc(natName(o))} niet bereiken. Je hebt een gezamenlijke grens nodig, of een sterkere marine (Marine bij Bouwen).</div>`;
     else{const ths=theaters(ME,o);const c=ths.includes(selC)?selC:bestTheater(ME,o);selC=c;const src=srcCont(ME,o,c);
       const naval=isNaval(ME,o,c);const E=defFront(o,ME,naval,c);const K=kit(ME),NA=A(ME);
-      const myP=(NA.a[src]*.7+unitPow({tk:NA.ka[src]*.7,jt:K.jt*.6,sh:naval?K.sh:0},true,naval))*atkMult(ME);
-      const [cl,cc]=chanceLabel(myP/(E.p*defDM(o)+1));const done=(G.N[ME].hitR||{})[o]===G.round;
+      const est=attackEst(ME,o,c,{sd:NA.a[src]*.7,tk:NA.ka[src]*.7,jt:K.jt*.6,sh:naval?K.sh:0});
+      const [cl,cc]=chanceLabel(est.r);const done=(G.N[ME].hitR||{})[o]===G.round;
       if(ths.length>1)h+=`<div class="lbl">Kies het front</div><div class="chips" style="margin-bottom:6px">${ths.map(t=>`<button class="chip ${t===c?'on':''}" data-th="${t}">${CONTS[t]}</button>`).join('')}</div>`;
       h+=`<div class="note">Front in <b style="color:var(--ink)">${CONTS[c]}</b>${src!==c?`, je troepen vertrekken vanuit ${CONTS[src]}`:''}. Je hebt daar ${fmtT(NA.a[src])} soldaten en ${fmtN(NA.ka[src])} tanks.</div>`;
       if(E.mil)h+=`<div class="note" style="color:var(--green)">${esc(natName(o))} heeft hier bijna geen leger, alleen een burgerwacht. Dit gebied verover je snel.</div>`;
-      h+=`<button class="btn red big wide" id="attB" ${ap&&!done?'':'disabled'}>${done?'Deze ronde al aangevallen':'AANVALLEN'}</button><div class="note">Aan jouw grens: ongeveer <b style="color:var(--ink)">${fmtT(E.s)}</b> soldaten${E.tk>=1?`, ${fmtN(E.tk)} tanks`:''}${E.jt>=1?`, ${fmtN(E.jt)} vliegtuigen`:''}. Met 70% van je leger: <b style="color:${cc}">${cl}</b>.${naval?' Dit is een aanval over zee: neem schepen mee.':''}</div>`;
+      h+=`<button class="btn red big wide" id="attB" ${ap&&!done?'':'disabled'}>${done?'Deze ronde al aangevallen':'AANVALLEN'}</button><div class="note">Aan jouw grens: ongeveer <b style="color:var(--ink)">${fmtT(E.s)}</b> soldaten${E.tk>=1?`, ${fmtN(E.tk)} tanks`:''}${E.jt>=1?`, ${fmtN(E.jt)} vliegtuigen`:''}. Met 70% van je leger: <b style="color:${cc}">${cl}</b>.${est.T.main?` ${TERR[est.T.main].ic} ${TERR[est.T.main].nm.toLowerCase()}: moeilijker.`:''}${naval?' Dit is een aanval over zee: neem schepen mee.':''}</div>`;
       if(K.bm>0)h+=`<button class="btn wide" id="bombB" ${ap?'':'disabled'}>Bombarderen <small>· ${fmtN(K.bm)} bommen</small></button>`}
     {const we=G.N[o].we||0;if(we>5)h+=`<div class="sec"><span>Oorlogsmoeheid</span><span>${we>70?'op instorten':we>45?'hoog':we>20?'merkbaar':'laag'}</span></div><div class="webar"><i style="width:${we}%;background:${we>45?'var(--red)':'var(--amber)'}"></i></div>`}
     if(!isHuman(o)){const op=opinion(o,ME);h+=`<div class="sec"><span>Mening over jou</span><span>${op>40?'vriendelijk':op>5?'positief':op>-20?'neutraal':op>-60?'wantrouwig':'vijandig'}</span></div><div class="opbar"><i style="${op>=0?`left:50%;width:${op/2}%;background:var(--green)`:`left:${50+op/2}%;width:${-op/2}%;background:var(--red)`}"></i></div>`}
@@ -1150,13 +1163,14 @@ function openAttack(o,c){
   if(!myTurn()||BATTLE)return;if(c==null||!theaters(ME,o).includes(c))c=bestTheater(ME,o);const src=srcCont(ME,o,c),NA=A(ME);if(!apLeft()){toast('Je bevelen voor deze ronde zijn op.','lose');return}
   if((G.N[ME].hitR||{})[o]===G.round){toast(`Je hebt ${esc(natName(o))} deze ronde al aangevallen. Volgende ronde kan het weer.`,'lose');return}
   const mine=Math.floor(NA.a[src]),K=kit(ME),mtk=NA.ka[src];if(mine<10&&!mtk&&!K.jt){toast(`Je hebt geen soldaten in ${CONTS[src]}. Verplaats eerst troepen of stuur vliegtuigen.`,'lose');return}
-  const naval=isNaval(ME,o,c);const E=defFront(o,ME,naval,c);const TF=frontTerrain(ME,o,c);const dm=defDM(o)*TF.d,am=atkMult(ME);
+  const naval=isNaval(ME,o,c);const est0=attackEst(ME,o,c,{});const E=est0.E,TF=est0.T;
   const al=[...dip().al[o]].filter(c=>c!==ME&&!allied(c,ME));
   openSheet(`<h3>${natFlag(ME)} ${esc(natName(ME))} valt ${esc(natName(o))} aan</h3>
    ${!atWar(ME,o)?`<div class="warn">Dit is een oorlogsverklaring.${al.length?` Bondgenoten van ${esc(natName(o))} kunnen meevechten: ${al.slice(0,4).map(c=>esc(natName(c))).join(', ')}.`:''}</div>`:''}
    <div class="note">Front in <b style="color:var(--ink)">${CONTS[c]}</b>. Soldaten en tanks komen uit ${CONTS[src]}; vliegtuigen, schepen en bommen kunnen overal heen.${E.mil?` <b style="color:var(--green)">Hier staat bijna geen leger: dit gaat snel.</b>`:''}</div>
    ${TF.main?`<div class="warn">${TERR[TF.main].ic} <b>${TERR[TF.main].nm}.</b> ${TERR[TF.main].tip}</div>`:''}
-   <div class="vs"><div class="side"><small>Jouw aanvalskracht</small><div class="nm">${esc(natName(ME))}</div><b class="num" id="aN"></b></div><div class="mid">VS</div><div class="side"><small>Hun kracht aan de grens</small><div class="nm">${esc(natName(o))}</div><b class="num">~${fmtT(E.p)}</b></div></div>
+   <div class="vs"><div class="side"><small>Jouw aanvalskracht</small><div class="nm">${esc(natName(ME))}</div><b class="num" id="aN"></b></div><div class="mid">VS</div><div class="side"><small>Hun verdediging</small><div class="nm">${esc(natName(o))}</div><b class="num" id="dN">~${fmtT(est0.dp)}</b></div></div>
+   <div class="note">Zij hebben aan dit front ~${fmtT(E.p)} kracht, maal hun voordelen: ${est0.D.parts.map(([n,m])=>`${n} ×${nl(m,2)}`).join(', ')}. Jouw bonus: ×${nl(est0.am,2)}.</div>
    <div class="lbl">Wat stuur je? <span style="text-transform:none;letter-spacing:0">(gestuurd / je voorraad)</span></div>
    <div class="ulist">${urow('sd','Soldaten','helm',mine,Math.round(mine*.7))}${urow('tk','Tanks','tank',mtk,Math.round(mtk*.7))}${urow('jt','Vliegtuigen','jet',K.jt,Math.round(K.jt*.6))}${urow('sh','Schepen','ship',K.sh,naval?K.sh:0)}${urow('bm','Bommen vooraf','bomb',K.bm,0)}</div>
    <div class="row" style="justify-content:space-between;flex-wrap:wrap"><b id="oddsT" style="font-family:var(--f-disp);font-size:16px"></b><span class="note">Wat je niet stuurt, blijft thuis om te verdedigen.</span></div>
@@ -1164,8 +1178,8 @@ function openAttack(o,c){
    <div class="row"><button class="btn ghost" id="aC">Annuleer</button><button class="btn red big" style="flex:1" id="aGo">TEN AANVAL!</button></div>`,s=>{
     const v=id=>{const e=s.querySelector('#u_'+id);return e?+e.value:0};
     const upd=()=>{s.querySelectorAll('.urow input').forEach(e=>{s.querySelector('#'+e.id+'V').innerHTML=`${fmtN(+e.value)}<small> / ${fmtN(+e.max)}</small>`});
-      const p=v('sd')+unitPow({tk:v('tk')*TF.tk,jt:v('jt')*(TF.main==='jun'?.75:1),sh:v('sh')},true,naval);const bk=Math.min(E.g,v('bm')*190/defMult(o))*E.fs;
-      s.querySelector('#aN').textContent=fmtT(p);const [cl,cc]=chanceLabel(p*am/(Math.max(1,E.p-bk)*dm+1));const t=s.querySelector('#oddsT');t.textContent=cl;t.style.color=cc;
+      const es=attackEst(ME,o,c,{sd:v('sd'),tk:v('tk'),jt:v('jt'),sh:v('sh'),bm:v('bm')});const p=es.raw;
+      s.querySelector('#aN').textContent=fmtT(es.ap);s.querySelector('#dN').textContent='~'+fmtT(es.dp);const [cl,cc]=chanceLabel(es.r);const t=s.querySelector('#oddsT');t.textContent=cl;t.style.color=cc;
       s.querySelector('#aGo').disabled=p<10};
     s.querySelectorAll('.urow input').forEach(e=>e.oninput=upd);upd();s.querySelector('#aC').onclick=closeSheet;
     s.querySelector('#aGo').onclick=()=>{if(!useAP())return;closeSheet();liveBattle(o,v('sd'),{tk:v('tk'),jt:v('jt'),sh:v('sh'),bm:v('bm')},c)}});
@@ -1252,10 +1266,10 @@ function liveBattle(o,send,u,c){
     <div class="lb-side r"><small>${esc(natName(o))}</small><b class="num" id="lbD"></b></div>
     <button class="btn red big" id="lbStop">STOP</button>`;
   $('#app').appendChild(bar);
-  const upd=()=>{const E=defFront(B.def,B.att,B.naval);bar.querySelector('#lbA').textContent=fmtT(attPow(B));bar.querySelector('#lbD').textContent=fmtT(E.p);const sa=attPow(B)*B.am,sd=E.p*defDM(B.def);bar.querySelector('#lbT').style.width=clamp((sa*B.mA*(1+.35*B.mom))/(sa*B.mA*(1+.35*B.mom)+sd*B.mD*(1-.35*B.mom)+1)*100,4,96)+'%';
+  const upd=()=>{const E=defFront(B.def,B.att,B.naval,B.c);bar.querySelector('#lbA').textContent=fmtT(attPow(B));bar.querySelector('#lbD').textContent=fmtT(E.p);const sa=attPow(B)*B.am,sd=E.p*defDM(B.def)*(B.ter?B.ter.d:1);bar.querySelector('#lbT').style.width=clamp((sa*B.mA*(1+.35*B.mom))/(sa*B.mA*(1+.35*B.mom)+sd*B.mD*(1-.35*B.mom)+1)*100,4,96)+'%';
     const ml=m=>m>1.1?'hoog':m>.8?'goed':m>.55?'wankel':'gebroken';bar.querySelector('#lbMA').textContent='Moreel: '+ml(B.mA);bar.querySelector('#lbMD').textContent='Moreel: '+ml(B.mD);
     const un=[B.tk?B.tk+' tanks':'',B.jt?B.jt+' vliegt.':'',B.sh?B.sh+' schepen':''].filter(Boolean).join(' · ');
-    bar.querySelector('#lbS').textContent=`${B.km.g>0?'+'+fmtKm(B.km.g)+' veroverd':'nog geen terreinwinst'}${B.km.l>0?' · −'+fmtKm(B.km.l)+' verloren':''}${un?' · '+un:''} · ronde ${B.step}/${B.maxSteps}`};
+    bar.querySelector('#lbS').textContent=`${B.km.g>0?'+'+fmtKm(B.km.g)+' veroverd':'nog geen terreinwinst'}${B.km.l>0?' · −'+fmtKm(B.km.l)+' verloren':''}${un?' · '+un:''} · dag ${B.step}/${B.maxSteps}`};
   upd();
   let timer=0;
   const finish=(stopped)=>{clearTimeout(timer);endBattle(B,stopped);BATTLE=null;
@@ -1307,8 +1321,7 @@ function updateHud(){
 function canAct(){const N=G.N[ME];if(!N.ap)return false;if(UPG.some((u,i)=>N.u[i]<u.max&&upCost(ME,i)<=N.m))return true;for(const c of nbrs()[ME])if(!allied(ME,c))return true;return false}
 $('#endTurn').onclick=()=>{
   if(!myTurn()||BATTLE)return;const N=G.N[ME];
-  if(!N.acted&&canAct()){toast('Geef eerst minstens één bevel: val een land aan of bouw iets.','lose');return}
-  if(N.ap>0&&canAct()){openSheet(`<h3>Beurt beëindigen?</h3><div class="note" style="font-size:15px;color:var(--ink)">Je hebt nog ${N.ap} ${N.ap===1?'bevel':'bevelen'} over. Die vervallen als je nu stopt.</div><div class="row"><button class="btn ghost" id="eC">Verder spelen</button><button class="btn gold" style="flex:1" id="eGo">Einde beurt</button></div>`,s=>{s.querySelector('#eC').onclick=closeSheet;s.querySelector('#eGo').onclick=()=>{closeSheet();doEndTurn()}});return}
+  if(N.ap>0&&canAct()){openSheet(`<h3>Beurt beëindigen?</h3><div class="note" style="font-size:15px;color:var(--ink)">${N.acted?`Je hebt nog ${N.ap} ${N.ap===1?'bevel':'bevelen'} over. Die vervallen als je nu stopt.`:'Je hebt deze ronde nog niets gedaan. Je kunt aanvallen, bouwen of diplomatie voeren. Wachten mag ook: je leger groeit gewoon door.'}</div><div class="row"><button class="btn ghost" id="eC">Verder spelen</button><button class="btn gold" style="flex:1" id="eGo">Einde beurt</button></div>`,s=>{s.querySelector('#eC').onclick=closeSheet;s.querySelector('#eGo').onclick=()=>{closeSheet();doEndTurn()}});return}
   doEndTurn()};
 function doEndTurn(){TURN_DL=0;
   selectNation(-1);const eb=$('#endTurn');eb.textContent='DE WERELD BEWEEGT…';eb.disabled=true;
@@ -1456,7 +1469,7 @@ function showMenu(){
 }
 function showHelp(){
   openSheet(`<h3>Hoe werkt Wereldrijk?</h3><div class="note" style="font-size:14px;line-height:1.5;color:var(--ink)">
-  <p style="margin:0 0 8px"><b>Doel.</b> Word het grootste land ter wereld. Na de laatste ronde wint wie het meeste land heeft.</p>
+  <p style="margin:0 0 8px"><b>Doel.</b> Word het grootste land ter wereld. Na de laatste ronde wint wie het meeste land heeft. Verover je 35% van alle land, dan win je meteen.</p>
   <p style="margin:0 0 8px"><b>Aanvallen.</b> Tik op een buurland en dan op Aanvallen. Kies hoeveel soldaten je stuurt. Veroverd land krijgt meteen jouw kleur en het front schuift over de hele grens op. Verdedigers vechten thuis sterker en geluk speelt mee. Druk op STOP wanneer je wilt; het front blijft staan voor je volgende aanval.</p>
   <p style="margin:0 0 8px"><b>Continenten.</b> Soldaten en tanks staan op een continent en verdedigen alleen daar. Heb je land op een ander continent, verplaats dan troepen (tik op je eigen land). Een gebied zonder leger wordt snel veroverd. Vliegtuigen, schepen en bommen kunnen overal heen, en vliegtuigen laten het front sneller opschuiven.</p>
   <p style="margin:0 0 8px"><b>Gevechten.</b> Niet alleen het grootste leger wint. Moreel, het initiatief en uitputting bepalen wie die dag beter vecht, dus het front gaat heen en weer. Een land dat moe is van de oorlog of zijn hoofdstad kwijt is, geeft zich eerder over of vraagt om vrede.</p>
