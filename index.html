@@ -410,9 +410,9 @@ R0.forEach(r=>r.rings.forEach(({pts,e})=>{let k=0;for(let j=0;j<e.length;j+=2){c
 const gratPath=new Path2D();MAP.grat.forEach(l=>{l.forEach((p,i)=>i?gratPath.lineTo(p[0],p[1]):gratPath.moveTo(p[0],p[1]))});
 
 const MODES=[
- {nm:'Makkelijk',sub:'Grote landen met een sterk leger. Je krijgt een kleine bonus, maar je buren laten zich niet zomaar veroveren.',list:['United States of America','China','Russia','India','Brazil','Germany'],atk:1.04,reinf:1.1,agg:1.05,aiDef:1.05,aiEco:1.05,cap:.8,gov:.003},
- {nm:'Gemiddeld',sub:'Middelgrote machten met sterke buren. Geen bonus: de computer verdedigt zich goed en valt je eerder aan.',list:['France','United Kingdom','Japan','Turkey','Iran','Saudi Arabia','Egypt','Argentina'],atk:1,reinf:1,agg:1.3,aiDef:1.12,aiEco:1.15,cap:.6,gov:.0045},
- {nm:'Moeilijk',sub:'Kleine landen tussen grote buren. De wereld is agressief, de computer is sterker en geeft zich bijna nooit over.',list:['Netherlands','Poland','Greece','South Korea','Vietnam','Morocco','Kenya','Colombia'],atk:.95,reinf:.95,agg:1.6,aiDef:1.2,aiEco:1.25,cap:.4,gov:.006},
+ {nm:'Makkelijk',sub:'Grote landen met een sterk leger. Je krijgt een kleine bonus, maar je buren laten zich niet zomaar veroveren.',list:['United States of America','China','Russia','India','Brazil','Germany'],atk:1.04,reinf:1.1,agg:1.05,aiDef:1.05,aiEco:1.05,cap:.8,gov:.003,st:{pop:350,gdp:5000,m:150,t:1000000,tk:1600,jt:450,sh:50,bm:130,u:{ma:2,on:1,in:1,mb:1}}},
+ {nm:'Gemiddeld',sub:'Middelgrote machten met sterke buren. Geen bonus: de computer verdedigt zich goed en valt je eerder aan.',list:['France','United Kingdom','Japan','Turkey','Iran','Saudi Arabia','Egypt','Argentina'],atk:1,reinf:1,agg:1.3,aiDef:1.12,aiEco:1.15,cap:.6,gov:.0045,st:{pop:80,gdp:1300,m:40,t:300000,tk:450,jt:100,sh:14,bm:25,u:{ma:1,on:1}}},
+ {nm:'Moeilijk',sub:'Kleine landen tussen grote buren. De wereld is agressief, de computer is sterker en geeft zich bijna nooit over.',list:['Netherlands','Poland','Greece','South Korea','Vietnam','Morocco','Kenya','Colombia'],atk:.95,reinf:.95,agg:1.6,aiDef:1.2,aiEco:1.25,cap:.4,gov:.006,st:{pop:40,gdp:450,m:12,t:180000,tk:280,jt:40,sh:6,bm:12,u:{ma:1}}},
 ];
 MODES.forEach(m=>m.ids=m.list.map(nIdx).filter(i=>i>=0&&natRegions[i].length));
 const RANKS=[{at:0,nm:'Staat'},{at:5,nm:'Koninkrijk'},{at:12,nm:'Rijk'},{at:25,nm:'Keizerrijk'},{at:45,nm:'Wereldmacht'}];
@@ -466,6 +466,15 @@ function initialState(o){
     return {m:+(d.bud*.6+d.gdp*.01).toFixed(3),t:a.reduce((x,y)=>x+y,0),a,ka,u,k,hit:0,dead:natRegions[n].length?0:1}});
   const order=[],hum={};
   o.humans.forEach((h,k)=>{order.push(h.nation);hum[h.nation]={nick:h.nick,uid:h.uid||null};const Nn=N[h.nation];Nn.h=1;Nn.col=h.color||PALETTE[k%PALETTE.length];Nn.seen=0;Nn.rk=-1});
+  // fair start: every player country in a mode begins with the same people, money, army and weapons
+  o.humans.forEach(h=>{const M=MODES[o.diff??1];if(!M||!M.st)return;const n=h.nation,st=M.st,rs=natRegions[n],Nn=N[n];
+    let tp=0,tg=0;rs.forEach(i=>{tp+=R.p[i];tg+=R.g[i]});rs.forEach(i=>{R.p[i]=+(R.p[i]*st.pop/(tp||1)).toFixed(4);R.g[i]=+(R.g[i]*st.gdp/(tg||1)).toFixed(4)});
+    const ta=Nn.a.reduce((x,y)=>x+y,0),tk=Nn.ka.reduce((x,y)=>x+y,0);
+    if(ta>0)Nn.a=Nn.a.map(v=>Math.round(v*st.t/ta));else{Nn.a.fill(0);Nn.a[CAPC[n]]=st.t}
+    if(tk>0)Nn.ka=Nn.ka.map(v=>Math.round(v*st.tk/tk));else{Nn.ka.fill(0);Nn.ka[CAPC[n]]=st.tk}
+    Nn.t=Nn.a.reduce((x,y)=>x+y,0);const cst=rs.some(i=>R0[i].coast);
+    Nn.k={tk:Nn.ka.reduce((x,y)=>x+y,0),jt:st.jt,sh:cst?st.sh:0,bm:st.bm};Nn.m=st.m;
+    Nn.u=new Array(UPG.length).fill(0);for(const id in st.u)Nn.u[U[id]]=st.u[id]});
   const d0=new Date();return {v:8,sm:d0.getFullYear()*12+d0.getMonth(),tl:o.tl??90,coal:{},mode:o.mode,diff:o.diff??1,code:o.code||null,round:1,maxR:o.maxR,turn:0,order,hum,N,R,al:{},war:{},tr:{},op:{},occ:{},offers:[],log:[],lc:0,rev:1,over:null,ts:Date.now(),fx:[]};
 }
 
@@ -1501,7 +1510,7 @@ function renderPick(){
     else h+=`<div class="lbl">Modus: ${M.nm}</div>`;
     h+=countryBtns(M.ids,n,taken);
     if(n>=0){const d=NAT[n];
-      h+=`<div class="grid2"><div class="kv"><small>Soldaten</small><b>${fmtT(d.mil*1000)}</b></div><div class="kv"><small>Inwoners</small><b>${fmtPop(d.pop)}</b></div></div>`;
+      const st=M.st;h+=`<div class="grid2"><div class="kv"><small>Soldaten</small><b>${fmtT(st.t)}</b></div><div class="kv"><small>Inwoners</small><b>${fmtPop(st.pop)}</b></div><div class="kv"><small>Economie</small><b>${fmtMoney(st.gdp)}</b></div><div class="kv"><small>Gebied</small><b>${fmtKm(KM0[n])}</b></div></div><div class="note">In ${M.nm} start elk land met evenveel inwoners, geld, soldaten en wapens. Alleen de ligging en grootte verschillen.</div>`;
       if(P.mode==='local')h+=`<input type="text" id="pkNick" maxlength="16" placeholder="Naam speler ${P.players.length+1}" aria-label="Naam speler">`;
       h+=`<button class="btn gold big wide" id="pkGo" ${taken.has(n)?'disabled':''}>${P.mode==='solo'?'Speel met '+esc(d.name):'Kies '+esc(d.name)}</button>`}
     if(P.mode==='local'){h+=`<div class="plist">${P.players.map((p,i)=>`<div class="pl"><i style="background:${PALETTE[i]}"></i><b>${esc(p.nick)}</b><span class="r">${esc(NAT[p.nation].name)}</span></div>`).join('')}</div><button class="btn green wide" id="pkStart" ${P.players.length<2?'disabled':''}>${P.players.length<2?'Minstens 2 spelers nodig':'START MET '+P.players.length+' SPELERS'}</button>`}
