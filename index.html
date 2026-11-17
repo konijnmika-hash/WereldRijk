@@ -42,6 +42,24 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--brass2);outline
 #endTurn{background:linear-gradient(180deg,#f2b84b,#c98a1d);color:#1b1206;border:0;border-radius:9px;height:50px;padding:0 20px;font-family:var(--f-disp);font-weight:700;font-size:17px;letter-spacing:.06em;box-shadow:0 4px 0 #7a520f,0 8px 18px #0008}
 #endTurn:active{transform:translateY(3px);box-shadow:0 1px 0 #7a520f}
 #endTurn[disabled]{filter:grayscale(1) brightness(.6)}
+#timer{font-family:var(--f-disp);font-weight:700;font-size:17px;height:50px;min-width:66px;display:flex;align-items:center;justify-content:center;border-radius:9px;background:#0b1722ee;border:1px solid var(--line);font-variant-numeric:tabular-nums;box-sizing:border-box}
+#timer.low{color:#fff;background:#8f1b28;border-color:var(--red);animation:tpulse 1s infinite}
+@keyframes tpulse{50%{transform:scale(1.07)}}
+#warbox{position:absolute;top:calc(52px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));z-index:4;width:min(270px,42vw);background:#0b1722ee;border:1px solid var(--line);border-radius:9px;font-size:13px;overflow:hidden}
+#warbox[hidden]{display:none}
+#warbox .wbh{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;color:inherit;padding:7px 10px;font-family:var(--f-disp);font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+#warbox .wbh span{display:flex;align-items:center;gap:4px}
+#warbox .wbh svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#warbox .wbh .w{color:var(--amber)}#warbox .wbh .a{color:var(--cyan)}#warbox .wbh .chev{margin-left:auto;color:var(--mute);font-size:12px}
+#warbox .wbb{max-height:44vh;overflow-y:auto;padding:0 10px 9px;display:flex;flex-direction:column;gap:3px}
+#warbox .wbl{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);margin-top:6px;font-weight:700}
+#warbox .wbr{display:flex;flex-direction:column;align-items:stretch;text-align:left;background:var(--panel2);border:0;border-left:3px solid var(--amber);color:inherit;border-radius:6px;padding:5px 8px;font:inherit}
+#warbox .wbr.al{border-left-color:var(--cyan)}
+#warbox .wbr b{font-weight:600;display:flex;align-items:center;gap:6px}#warbox .wbr b .num{margin-left:auto;font-weight:500;color:var(--mute);font-size:12px}
+#warbox .wbr small{color:var(--mute);font-size:11.5px;margin-top:1px}
+#app.pnl #warbox{display:none}
+.webar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden}.webar i{display:block;height:100%;border-radius:3px}
+.lb-mor{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mute);gap:8px}
 #zoom{position:absolute;left:max(10px,env(safe-area-inset-left,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;z-index:5}
 #zoom .ibtn{width:40px;height:40px;font-size:20px;padding:0}
 #hint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));background:#0b1722ee;border:1px solid var(--line);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--mute);z-index:4;max-width:44vw;text-align:center;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -242,6 +260,9 @@ button.stat{color:inherit;font:inherit;text-align:left;cursor:pointer}
   #panel{top:auto;left:8px;right:8px;width:auto;bottom:calc(68px + env(safe-area-inset-bottom,0px));max-height:56vh;transform:translateY(calc(100% + 90px))}
   #panel.open{transform:none}
   #toasts{top:calc(98px + env(safe-area-inset-top,0px));width:calc(100% - 24px)}
+  #warbox{top:calc(98px + env(safe-area-inset-top,0px));width:min(250px,62vw)}
+  #app.pnl #warbox{display:block}
+  #timer{height:44px;min-width:58px;font-size:15px}
   #hint{bottom:calc(70px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 32px);font-size:12.5px}
   #pickcard{left:10px;right:10px;width:auto;max-height:54vh}
   #pickbar h2{font-size:17px}
@@ -283,7 +304,8 @@ button.stat{color:inherit;font:inherit;text-align:left;cursor:pointer}
     <button class="ibtn" id="zHome" aria-label="Naar mijn rijk"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7m0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5"/></svg></button>
   </div>
   <div id="hint">Tik op een land om aan te vallen</div>
-  <div id="dock"><button id="endTurn">EINDE BEURT</button></div>
+  <div id="dock"><div id="timer" hidden aria-live="polite"></div><button id="endTurn">EINDE BEURT</button></div>
+  <div id="warbox" hidden></div>
   <aside id="panel"></aside>
   <div id="toasts"></div>
   <div id="rotate"><div class="ph"></div><div style="font-family:var(--f-disp);font-size:22px">Draai je telefoon</div><div class="note">Wereldrijk speel je liggend.</div></div>
@@ -406,7 +428,7 @@ function initialState(o){
     return {m:+(d.bud*.6+d.gdp*.01).toFixed(3),t:a.reduce((x,y)=>x+y,0),a,ka,u,k,hit:0,dead:natRegions[n].length?0:1}});
   const order=[],hum={};
   o.humans.forEach((h,k)=>{order.push(h.nation);hum[h.nation]={nick:h.nick,uid:h.uid||null};const Nn=N[h.nation];Nn.h=1;Nn.col=h.color||PALETTE[k%PALETTE.length];Nn.seen=0;Nn.rk=0});
-  return {v:8,coal:{},mode:o.mode,diff:o.diff??1,code:o.code||null,round:1,maxR:o.maxR,turn:0,order,hum,N,R,al:{},war:{},tr:{},op:{},occ:{},offers:[],log:[],lc:0,rev:1,over:null,ts:Date.now(),fx:[]};
+  return {v:8,tl:o.tl??90,coal:{},mode:o.mode,diff:o.diff??1,code:o.code||null,round:1,maxR:o.maxR,turn:0,order,hum,N,R,al:{},war:{},tr:{},op:{},occ:{},offers:[],log:[],lc:0,rev:1,over:null,ts:Date.now(),fx:[]};
 }
 
 /* ================= caches & rules ================= */
@@ -496,6 +518,17 @@ function accept(ai,h,type){
   return false;
 }
 
+// Will AI country ai attack target t because player h asks (and maybe pays)?
+function acceptAsk(ai,h,t,pay){const s=stats();if(allied(ai,t)||G.N[t].dead||!canReach(ai,t))return false;
+  let sc=opinion(ai,h)/100+(allied(ai,h)?.35:0)+(atWar(h,t)?.12:0)+NAT[ai].ag*.35+clamp(pay/(s[ai].inc+.05)*.25,0,.45)
+    +clamp((s[ai].power/(s[t].power+1)-1)*.25,-.6,.4)-(trading(ai,t)?.2:0)-(dip().war[ai].size?.15*dip().war[ai].size:0)-(G.N[ai].we||0)/150;
+  return sc+rnd()*.3>.8}
+// Will AI country ai join player h's country?
+function acceptJoin(ai,h){const s=stats();if(atWar(ai,h))return false;const op=opinion(ai,h);
+  const ratio=s[h].power/(s[ai].power+1);const threat=[...dip().war[ai]].some(e=>e!==h&&s[e].power>s[ai].power*1.5);
+  const sc=op/100*.8+(allied(ai,h)?.25:0)+clamp(Math.log10(ratio)*.25,0,.55)+(threat?.3:0)+(G.N[ai].we||0)/200+lossFrac(ai)*.4-NAT[ai].ag*.45-(s[ai].regs>8?.3:s[ai].regs>4?.12:0);
+  return sc+rnd()*.2>.9}
+
 /* ================= war: a moving front line ================= */
 const HOME=1.3,TK_A=40,TK_D=25,JT=250,SH_A=300,SH_D=100;
 const kit=n=>{const N=G.N[n];if(!N.k)N.k={tk:0,jt:0,sh:0,bm:0};return N.k};
@@ -507,7 +540,7 @@ function frontRegions(att,def,tc,nc){const out=[];for(let r=0;r<NR;r++){if(G.R.o
   return out}
 const sizeF=r=>clamp(Math.sqrt(60000/(R0[r].km+2000)),.2,2.2);
 function transfer(r,to){const from=G.R.o[r];delete G.occ[r];G.R.o[r]=to;G.R.p[r]*=.98;G.R.g[r]*=.96;const loot=G.R.g[r]*.12;G.N[to].m+=loot;
-  if(R0[r].cap&&R0[r].n0===from){const pl=G.N[from].m*.3;G.N[from].m-=pl;G.N[to].m+=pl}
+  if(R0[r].cap&&R0[r].n0===from){const pl=G.N[from].m*.3;G.N[from].m-=pl;G.N[to].m+=pl;G.N[from].we=clamp((G.N[from].we||0)+22,0,100);G.N[from].capL=1}
   G.N[from].hit=(G.N[from].hit||0)+1;G.N[to].cq=(G.N[to].cq||0)+1;dirty();evac(from,CONT[r]);return loot}
 // A country that loses its last land on a continent evacuates half of the army there to its home continent; the rest is lost.
 function evac(n,c){if(G._noEvac)return;const N=G.N[n];if(!N.a||ownsIn(n,c)||!stats()[n].regs)return;const sd=N.a[c],tk=N.ka[c];if(!sd&&!tk)return;
@@ -566,7 +599,8 @@ function startBattle(att,def,send,maxSteps,u,c){
   const take=id=>{const v=Math.max(0,Math.min(K[id],Math.round(u[id]||0)));K[id]-=v;return v};
   const jt=take('jt'),sh=take('sh'),bm=take('bm');
   const naval=isNaval(att,def,c);STATS=null;
-  const B={att,def,c,src,sent:send,a:send,tk,jt,sh,tk0:tk,jt0:jt,sh0:sh,naval,am:atkMult(att),step:0,maxSteps:maxSteps||12,touched:new Set(),flipped:[],lostR:[],km:{g:0,l:0},done:false,msg:'',loot:0,aLoss:0,dLoss:0,lost:{tk:0,jt:0,sh:0},kill:{tk:0,jt:0},adv:0};
+  const ND=G.N[def];let capF=false;for(const [r] of frontRegions(att,def,c))if(R0[r].cap&&R0[r].n0===def)capF=true;
+  const B={att,def,c,src,mA:1,mD:clamp(1+(capF?.15:0)+(ND.last?.2:0)-(ND.we||0)/250,.5,1.5),mom:0,bad:0,capF,sent:send,a:send,tk,jt,sh,tk0:tk,jt0:jt,sh0:sh,naval,am:atkMult(att),step:0,maxSteps:maxSteps||12,touched:new Set(),flipped:[],lostR:[],km:{g:0,l:0},done:false,msg:'',loot:0,aLoss:0,dLoss:0,lost:{tk:0,jt:0,sh:0},kill:{tk:0,jt:0},adv:0};
   if(bm>0)B.bomb=bombStrike(att,def,bm,c);
   B.p0=attPow(B);
   return B;
@@ -574,11 +608,15 @@ function startBattle(att,def,send,maxSteps,u,c){
 function stepBattle(B){
   if(B.done)return B;B.step++;
   const E=defFront(B.def,B.att,B.naval,B.c),dm=defDM(B.def);const r1=.6+rnd()*.8,r2=.6+rnd()*.8;
-  const AP=attPow(B)+1;const aP=AP*B.am*r1,dP=E.p*dm*r2;
+  const AP=attPow(B)+1;
+  // Momentum swings back and forth: the side that fights better this hour pushes, not simply the bigger army.
+  B.mom=clamp(B.mom*.55+(rnd()*2-1)*.5+(B.adv||0)*.12,-.8,.8);
+  const supA=(B.naval?.85:1)*(B.src!==B.c?.9:1);
+  const aP=AP*B.am*r1*B.mA*supA*(1+.35*B.mom),dP=E.p*dm*r2*B.mD*(1-.35*B.mom)*(B.capF?1.12:1);
   // defender losses (soldier equivalents), spread over the forces at the front
   const N=A(B.def),K=kit(B.def);
   const dlP=Math.min(E.p*.15,.07*AP*B.am/dm*r1);
-  const ds=Math.min(N.a[B.c],Math.round(dlP*E.s/E.p));
+  const g0=N.a[B.c];const ds=Math.min(N.a[B.c],Math.round(dlP*E.s/E.p));
   const dtk=Math.min(N.ka[B.c],rround(dlP*(E.tk*TK_D/E.p)/TK_D*.8));subA(B.def,B.c,ds,dtk);
   const djt=Math.min(K.jt,rround(dlP*(E.jt*JT/E.p)/JT*.5));K.jt-=djt;
   if(B.naval){const dsh=Math.min(K.sh,rround(dlP*(E.sh*SH_D/E.p)/SH_D*.5));K.sh-=dsh}
@@ -593,13 +631,20 @@ function stepBattle(B){
   // Speed: a big superiority, air power (unless the enemy contests the sky) and tanks all make the front move faster.
   const air=B.jt*JT/AP,armor=B.tk*TK_A/AP,sup=B.jt/(B.jt+E.jt*1.5+1);
   const spd=Math.min(3.2,clamp(Math.sqrt(aP/(dP+1)),1,2)*(1+1.1*air*sup)*(1+.3*armor)*(E.mil?1.4:1));B.spd=spd;
-  const fb=B.flipped.length,lb=B.lostR.length;
-  if(adv>.04){pushFront(B.att,B.def,adv*.32*spd,B,1);B.msg=B.flipped.length>fb?`Een heel stuk van ${natName(B.def)} is nu van ${natName(B.att)}!`:adv>.3?'Het front schuift snel op!':'Het front schuift langzaam op…'}
-  else if(adv<-.1){B.bad=(B.bad||0)+1;pushFront(B.def,B.att,-adv*.2/(1+.5*(B.lostR.length)),B,-1);B.msg=B.lostR.length>lb?`${natName(B.def)} verovert een stuk terug!`:`${natName(B.def)} drukt het front terug!`}
+  const fb=B.flipped.length,lb=B.lostR.length;const rout=B.mD<.45;
+  if(adv>.04){B.bad=0;pushFront(B.att,B.def,adv*.32*spd*(rout?1.5:1),B,1);B.msg=B.flipped.length>fb?`Een heel stuk van ${natName(B.def)} is nu van ${natName(B.att)}!`:adv>.3?'Het front schuift snel op!':'Het front schuift langzaam op…'}
+  else if(adv<-.1){B.bad++;pushFront(B.def,B.att,-adv*.24/(1+.5*(B.lostR.length)),B,-1);B.msg=B.lostR.length>lb?`${natName(B.def)} verovert een stuk terug!`:`${natName(B.def)} drukt het front terug!`}
   else B.msg='Zware gevechten, het front staat stil.';
+  // morale: casualties and lost ground wear an army down; winning lifts it
+  const fa=as/(B.a+as+1),fd=ds/(g0+1),fl=B.flipped.length-fb,ll=B.lostR.length-lb;
+  B.mA=clamp(B.mA+adv*.07-fa*.5+ll*.03,.2,1.4);B.mD=clamp(B.mD-adv*.07-fd*.45-fl*.05,.2,1.5);
+  G.N[B.def].we=clamp((G.N[B.def].we||0)+fd*28+fl*5,0,100);G.N[B.att].we=clamp((G.N[B.att].we||0)+fa*18+ll*5,0,100);
+  if(rout&&adv>.04)B.msg=`De verdediging van ${natName(B.def)} stort in! Soldaten vluchten.`;
+  else if(B.mom>.45&&adv>.04)B.msg='Doorbraak! Je troepen hebben het initiatief.';
+  else if(B.mom<-.45)B.msg=`${natName(B.def)} slaat hard terug!`;
   if(checkDead(B.def,B.att)){B.done=true;B.end='elim'}
   else if(checkDead(B.att,B.def)){B.done=true;B.end='retreat'}
-  else if(attPow(B)<=B.p0*.25||B.bad>=3){B.done=true;B.end='retreat'}
+  else if(attPow(B)<=B.p0*.25||B.bad>=3||B.mA<.35){B.done=true;B.end='retreat'}
   else if(B.step>=B.maxSteps){B.done=true;B.end='max'}
   return B;
 }
@@ -636,11 +681,16 @@ function considerSurrender(d,a,demand){
   const N=G.N[d];if(N.dead||isHuman(d))return null;
   if(!demand&&N.lastAsk!=null&&G.round-N.lastAsk<2)return null;
   const s=stats();const lf=lossFrac(d);const ratio=s[d].power/(s[a].power+1);
-  const beaten=(lf>(demand?.25:.38)&&ratio<(demand?.55:.4))||(N.t<Math.max(500,G.N[a].t*.04)&&lf>.05);
+  const we=N.we||0;
+  const beaten=(lf>(demand?.25:.38)&&ratio<(demand?.55:.4))||(N.t<Math.max(500,G.N[a].t*.04)&&lf>.05)||(we>(demand?55:70)&&ratio<.8&&lf>.05);
   if(!beaten)return demand?'no':null;
   N.lastAsk=G.round;
-  const stubborn=NAT[d].ag*.5+(N.last?.2:0)+(dip().al[d].size?.15:0);
-  if(rnd()<.42+lf*.5-stubborn){capitulate(d,a);return 'cap'}
+  const helpers=[...dip().war[a]].filter(x=>x!==d&&allied(x,d)).length;
+  const stubborn=NAT[d].ag*.45+(N.last?.2:0)+helpers*.12;
+  if(rnd()<.18+lf*.5+we/180+(N.capL?.12:0)-stubborn){capitulate(d,a);return 'cap'}
+  // not ready to give everything up: offer peace, the front line becomes the new border
+  if(we>45&&rnd()<.55){if(isHuman(a)){if(!G.offers.some(o=>o.type==='peace'&&o.from===d&&o.to===a))G.offers.push({type:'peace',from:d,to:a,r:G.round,cede:1})}
+    else{makePeace(d,a);addLog(`${natName(d)} is uitgeput en staat de bezette gebieden af aan ${natName(a)}`,[a,d],'peace')}return 'peace'}
   if(!N.last){N.last=1;addA(d,homeCont(d),s[d].pop*1e6*.003,0);addLog(`${natName(d)} weigert zich over te geven en vecht tot het bittere einde!`,[d,a],'war')}
   return 'last';
 }
@@ -661,7 +711,7 @@ function mergeInto(t,u,vs){
   N.t=0;N.m=0;N.k={tk:0,jt:0,sh:0,bm:0};
   const kt=KM0[t]||1,ku=stats()[u].km||1;const nm=`${un}-${old}`;if(nm.length<=22&&!M.h&&kt>ku*.3)M.nm=nm;
   checkDead(t,u,true);dirty();
-  addLog(`${old} en ${un} voegen samen tot één land: ${natName(u)}, om ${natName(vs)} tegen te houden!`,[u,vs],'war');
+  if(vs==null)addLog(`${old} sluit zich vrijwillig aan bij ${un}!`,[u],'ally');else addLog(`${old} en ${un} voegen samen tot één land: ${natName(u)}, om ${natName(vs)} tegen te houden!`,[u,vs],'war');
 }
 // Countries notice who is growing fast or surrounding them, and respond: strike first, merge, or form a coalition.
 function aiThreats(){
@@ -705,7 +755,7 @@ function buyUpg(n,i){const N=G.N[n];if(N.u[i]>=UPG[i].max)return false;const c=u
 function startTurn(n){
   const st=stats()[n];const N=G.N[n];N.m+=st.inc-st.upk;
   if(N.m<0){scaleA(n,.92);N.m=0;if(isHuman(n))addLog(`${natName(n)} kan het leger niet betalen: een deel deserteert.`,[n],'info')}
-  STATS=null;const got=reinfAmount(n);A(n);const sp=stats()[n];if(sp.pop>0)for(let c=0;c<NC;c++){if(sp.cr[c])N.a[c]+=Math.round(got*sp.cp[c]/sp.pop)}else N.a[homeCont(n)]+=got;fixA(n);N.bt={};
+  STATS=null;let got=reinfAmount(n);if(!isHuman(n)&&dip().war[n].size&&lossFrac(n)>.08&&(N.we||0)<50){got=Math.round(got*(1.35-(N.we||0)/150));}A(n);const sp=stats()[n];if(sp.pop>0)for(let c=0;c<NC;c++){if(sp.cr[c])N.a[c]+=Math.round(got*sp.cp[c]/sp.pop)}else N.a[homeCont(n)]+=got;fixA(n);N.bt={};
   if(isHuman(n)){N.lastR=got;const rk=rankOf(n);if(rk>(N.rk||0)){addLog(`${natName(n)} is nu een ${RANKS[rk].nm}!`,[n],'ally');N.rkUp=rk}N.rk=Math.max(N.rk||0,rk);N.ap=apMax(n);N.acted=0}
 }
 function aiBuyUnits(n,budget){
@@ -732,7 +782,8 @@ function aiTurn(n){
     const u={tk:Math.round(NA.ka[src]*.7),jt:Math.round(K.jt*.6),sh:naval?Math.round(K.sh*.8):0,bm:0};
     const send=Math.min(NA.a[src]*.65,Math.max(need/atkMult(n)*2.5,NA.a[src]*.3));
     const myP=(send+unitPow(u,true,naval))*atkMult(n);
-    if(myP>need*(myOcc?.75:1.1)&&send>300){
+    const ew=(G.N[e].we||0)/250,mw=(G.N[n].we||0)/200;
+    if(myP>need*(myOcc?.75:1.1)*(1-ew+mw)&&send>300&&(G.N[n].we||0)<85){
       if(K.bm>4&&rnd()<.5)u.bm=Math.round(K.bm*.5);
       runBattle(n,e,send,isHuman(e)?5:6,u,c)}
   }
@@ -766,7 +817,9 @@ function roundEnd(){
   for(let n=0;n<NN;n++)if(!G.N[n].dead&&!isHuman(n)){startTurn(n);aiTurn(n)}
   aiDiplomacy();
   for(let r=0;r<NR;r++){const N=G.N[G.R.o[r]];G.R.p[r]=+(G.R.p[r]*(1.004+.006*N.u[U.hu])).toFixed(5);G.R.g[r]=+(G.R.g[r]*1.012).toFixed(5)}
-  for(let n=0;n<NN;n++){const N=G.N[n];N.hit=Math.floor((N.hit||0)/2);N.cq=Math.floor((N.cq||0)*.7);if(N.last&&!dip().war[n].size)N.last=0}
+  for(const k of Object.keys(G.occ)){const r=+k,o=G.occ[k],ow=G.R.o[r],c=CONT[r];if(!G.N[ow].a||!G.N[o[0]].a)continue;const dg=G.N[ow].a[c],og=G.N[o[0]].a[c];
+    if(dg>og*1.2+500){o[1]-=.06;if(o[1]<=.01)delete G.occ[k]}}
+  for(let n=0;n<NN;n++){const N=G.N[n];N.we=Math.round((N.we||0)*(dip().war[n].size?.88:.6));if(!dip().war[n].size)N.capL=0;N.hit=Math.floor((N.hit||0)/2);N.cq=Math.floor((N.cq||0)*.7);if(N.last&&!dip().war[n].size)N.last=0}
   for(const k in G.op){const [a,h]=k.split('>').map(Number);let v=G.op[k];v+=trading(a,h)?2:0;v+=allied(a,h)?1:0;G.op[k]=Math.round(v*.97)}
   G.offers=G.offers.filter(o=>G.round-o.r<2);
   G.round++;dirty();
@@ -852,7 +905,7 @@ const DISP={};let OCC_ANIM=false;
 function hslRgb(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));return [Math.round(f(0)*255),Math.round(f(8)*255),Math.round(f(4)*255)]}
 function occMask(r){
   const R=R0[r];if(R._m)return R._m;
-  const b=R.bb,w0=b[2]-b[0],h0=b[3]-b[1];const k=clamp(110/Math.max(w0,h0,.5),2,14);
+  const b=R.bb,w0=b[2]-b[0],h0=b[3]-b[1];const k=clamp(170/Math.max(w0,h0,.5),2,18);
   const W=Math.max(3,Math.ceil(w0*k)+3),H=Math.max(3,Math.ceil(h0*k)+3);
   const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d',{willReadFrequently:true});
   g.setTransform(k,0,0,k,1-b[0]*k,1-b[1]*k);g.fillStyle='#fff';g.fill(R.path,'evenodd');
@@ -882,21 +935,27 @@ function occOrder(r,att){
       if(v<D[i]){D[i]=v;ch=true}}
     if(!ch)break}
   let mx=0;for(let i=0;i<n;i++)if(m[i]&&D[i]<INF&&D[i]>mx)mx=D[i];
-  const amp=mx*.28+2;const idx=[],key=new Float32Array(n);
+  const amp=mx*.17+1.5;const idx=[],key=new Float32Array(n);
   for(let i=0;i<n;i++){if(!m[i])continue;const x=i%W,y=(i/W)|0;const wx=M.ox+x/k,wy=M.oy+y/k;
-    const nz=vnoise(wx/6,wy/6)*.65+vnoise(wx/2.2+50,wy/2.2)*.35;
+    const nz=vnoise(wx/7,wy/7)*.8+vnoise(wx/3+50,wy/3)*.2;
     key[i]=(D[i]<INF?D[i]:mx+1+Math.hypot(x,y)*.01)+nz*amp;idx.push(i)}
-  idx.sort((a,b)=>key[a]-key[b]);return Int32Array.from(idx);
+  idx.sort((a,b)=>key[a]-key[b]);const ord=Int32Array.from(idx);ord.key=key;return ord;
 }
+// The front is drawn as a soft, anti-aliased line: every pixel has a distance key from the border,
+// and the line sits at a continuous threshold, so it glides instead of jumping pixel by pixel.
 function occImage(st,f){
-  const M=occMask(st.r);const cnt=Math.round(clamp(f,0,1)*st.ord.length);if(st.cnt===cnt&&st.cv)return st.cv;st.cnt=cnt;
-  const {W,H,m}=M;if(!st.cv){st.cv=document.createElement('canvas');st.cv.width=W;st.cv.height=H;st.cx=st.cv.getContext('2d')}
-  const id=st.cx.createImageData(W,H),d=id.data,occ=new Uint8Array(W*H);for(let j=0;j<cnt;j++)occ[st.ord[j]]=1;
-  const [r,g,b]=st.rgb,er=Math.round(r*.55),eg=Math.round(g*.55),eb=Math.round(b*.55);
-  for(let i=0;i<W*H;i++){const x=i%W;
-    if(occ[i]){const edge=(x>0&&m[i-1]&&!occ[i-1])||(x<W-1&&m[i+1]&&!occ[i+1])||(i>=W&&m[i-W]&&!occ[i-W])||(i<W*H-W&&m[i+W]&&!occ[i+W]);
-      const o=i*4;if(edge){d[o]=er;d[o+1]=eg;d[o+2]=eb}else{d[o]=r;d[o+1]=g;d[o+2]=b}d[o+3]=255}
-    else if(!m[i]&&((x>0&&occ[i-1])||(x<W-1&&occ[i+1])||(i>=W&&occ[i-W])||(i<W*H-W&&occ[i+W]))){const o=i*4;d[o]=r;d[o+1]=g;d[o+2]=b;d[o+3]=255}}
+  const M=occMask(st.r);const {W,H,m}=M;const L=st.ord.length;f=clamp(f,0,1);const q=Math.round(f*800);if(st.q===q&&st.cv)return st.cv;st.q=q;
+  if(!st.cv){st.cv=document.createElement('canvas');st.cv.width=W;st.cv.height=H;st.cx=st.cv.getContext('2d')}
+  const id=st.cx.createImageData(W,H),d=id.data,K=st.ord.key,N=W*H;const [r,g,b]=st.rgb,er=r*.5,eg=g*.5,eb=b*.5;
+  let T;if(f>=.999)T=1e12;else{const fi=f*L,i0=Math.min(L-1,Math.floor(fi)),k0=K[st.ord[i0]],k1=i0+1<L?K[st.ord[i0+1]]:k0;T=k0+(k1-k0)*(fi-i0)}
+  const w=1.15,band=2.4;
+  for(let i=0;i<N;i++){if(!m[i])continue;const dl=T-K[i];if(dl<=-w)continue;const a=clamp(dl/w*.5+.5,0,1);
+    const e=f>=.999?0:clamp(1-Math.abs(dl-band*.5)/band,0,1)*.7;const o=i*4;
+    d[o]=r+(er-r)*e;d[o+1]=g+(eg-g)*e;d[o+2]=b+(eb-b)*e;d[o+3]=a*255}
+  // bleed one pixel outward so the clip edge of the region stays covered
+  for(let i=0;i<N;i++){if(m[i])continue;const x=i%W;let j=-1;
+    if(x>0&&m[i-1]&&d[(i-1)*4+3])j=i-1;else if(x<W-1&&m[i+1]&&d[(i+1)*4+3])j=i+1;else if(i>=W&&m[i-W]&&d[(i-W)*4+3])j=i-W;else if(i<N-W&&m[i+W]&&d[(i+W)*4+3])j=i+W;
+    if(j>=0){const o=i*4,p=j*4;d[o]=d[p];d[o+1]=d[p+1];d[o+2]=d[p+2];d[o+3]=d[p+3]}}
   st.cx.putImageData(id,0,0);return st.cv;
 }
 function drawOcc(s,vx0,vy0,vx1,vy1){OCC_ANIM=false;const keys=new Set([...Object.keys(G.occ||{}),...Object.keys(DISP)]);
@@ -904,7 +963,7 @@ function drawOcc(s,vx0,vy0,vx1,vy1){OCC_ANIM=false;const keys=new Set([...Object
     if(!o||G.R.o[r]===o[0]){delete DISP[k];continue}
     if(!d)d=DISP[k]={f:0,o:o[0]};
     if(o[0]!==d.o){d.o=o[0];d.f=0;d.st=null}
-    const tgt=o[1];d.f+=(tgt-d.f)*.12;if(Math.abs(tgt-d.f)>.002)OCC_ANIM=true;else d.f=tgt;
+    const tgt=o[1];d.f+=(tgt-d.f)*.07;if(Math.abs(tgt-d.f)>.001)OCC_ANIM=true;else d.f=tgt;
     if(d.f<=.002)continue;
     const R=R0[r],b=R.bb;if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1)continue;
     const col=natColor(d.o);let sig=d.o+'|'+col;for(const j of R.nb)if(G.R.o[j]===d.o)sig+=','+j;
@@ -971,13 +1030,14 @@ const svgI=ic=>`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 const fmtN=v=>{v=Math.max(0,Math.round(v));return v>=1e4?fmtT(v):nl(v)};
 function kitChips(n){const K=kit(n);return `<div class="kitrow">${['tk','jt','sh','bm'].map(id=>`<span title="${UI[id].nm}">${svgI(UI[id].ic)}<b class="num">${fmtN(K[id])}</b><small>${UI[id].sh}</small></span>`).join('')}</div>`}
 function renderPanel(){
-  const P=$('#panel');if(selN<0||!G||G.pv||G.N[selN].dead){P.classList.remove('open');updateHint();return}
+  const P=$('#panel');if(selN<0||!G||G.pv||G.N[selN].dead){P.classList.remove('open');$('#app').classList.remove('pnl');updateHint();return}
   const o=selN,st=stats()[o];const can=myTurn();const [rc,rl]=relOf(o);const ap=apLeft();
   P.style.setProperty('--hc',natColor(o));
   let h=`<div class="ph"><span class="fl">${natFlag(o)}</span><div style="min-width:0"><h2>${esc(natName(o))}</h2><div class="own"><span class="rel ${rc}">${rl}</span>${G.hum[o]&&o!==ME?'speler '+esc(G.hum[o].nick):''}</div></div><button class="x" id="pClose" aria-label="Sluiten">×</button></div><div class="pb">`;
   h+=`<div class="grid2"><div class="kv"><small>Soldaten</small><b class="num">${fmtT(st.troops)}</b></div><div class="kv"><small>Inwoners</small><b class="num">${fmtPop(st.pop)}</b></div><div class="kv"><small>Grootte</small><b class="num">${fmtKm(st.km)}</b></div><div class="kv"><small>Economie</small><b class="num">${fmtMoney(st.gdp)}</b></div></div>`+kitChips(o);
   if(G.N[o].last)h+=`<div class="warn">${esc(natName(o))} vecht tot het bittere einde: +30% verdediging.</div>`;
   if(o===ME){h+=`<div class="dipbtns"><button class="btn gold" id="rkB">Bouwen</button><button class="btn" id="rkA">Leger &amp; wapens</button></div>`;
+    {const we=G.N[ME].we||0;if(we>5)h+=`<div class="sec"><span>Oorlogsmoeheid van je volk</span><span>${Math.round(we)}%</span></div><div class="webar"><i style="width:${we}%;background:${we>45?'var(--red)':'var(--amber)'}"></i></div>`}
     const NA=A(ME),cs=myConts(ME);
     if(cs.length>1){h+=`<div class="lbl">Leger per continent</div><div class="dlist">${cs.map(c=>`<div class="drow"><span>${CONTS[c]}</span><span class="r num" style="margin-left:auto">${fmtT(NA.a[c])} soldaten · ${fmtN(NA.ka[c])} tanks</span></div>`).join('')}</div>
       <button class="btn wide" id="mvB" ${can&&ap?'':'disabled'}>Troepen verplaatsen</button><div class="note">Soldaten en tanks verdedigen alleen het continent waar ze staan.</div>`}
@@ -995,16 +1055,18 @@ function renderPanel(){
       if(E.mil)h+=`<div class="note" style="color:var(--green)">${esc(natName(o))} heeft hier bijna geen leger, alleen een burgerwacht. Dit gebied verover je snel.</div>`;
       h+=`<button class="btn red big wide" id="attB" ${ap&&!done?'':'disabled'}>${done?'Deze ronde al aangevallen':'AANVALLEN'}</button><div class="note">Aan jouw grens: ongeveer <b style="color:var(--ink)">${fmtT(E.s)}</b> soldaten${E.tk>=1?`, ${fmtN(E.tk)} tanks`:''}${E.jt>=1?`, ${fmtN(E.jt)} vliegtuigen`:''}. Met 70% van je leger: <b style="color:${cc}">${cl}</b>.${naval?' Dit is een aanval over zee: neem schepen mee.':''}</div>`;
       if(K.bm>0)h+=`<button class="btn wide" id="bombB" ${ap?'':'disabled'}>Bombarderen <small>· ${fmtN(K.bm)} bommen</small></button>`}
+    {const we=G.N[o].we||0;if(we>5)h+=`<div class="sec"><span>Oorlogsmoeheid</span><span>${we>70?'op instorten':we>45?'hoog':we>20?'merkbaar':'laag'}</span></div><div class="webar"><i style="width:${we}%;background:${we>45?'var(--red)':'var(--amber)'}"></i></div>`}
     if(!isHuman(o)){const op=opinion(o,ME);h+=`<div class="sec"><span>Mening over jou</span><span>${op>40?'vriendelijk':op>5?'positief':op>-20?'neutraal':op>-60?'wantrouwig':'vijandig'}</span></div><div class="opbar"><i style="${op>=0?`left:50%;width:${op/2}%;background:var(--green)`:`left:${50+op/2}%;width:${-op/2}%;background:var(--red)`}"></i></div>`}
     const dis=ap?'':'disabled';h+='<div class="dipbtns">';
     if(war){h+=`<button class="btn green" data-dip="peace" ${dis}>Vrede voorstellen</button>`;if(!isHuman(o))h+=`<button class="btn" data-dip="surr" ${dis}>Overgave eisen</button>`}
     else if(allied(ME,o))h+=`<button class="btn ghost" data-dip="breakAl" ${dis}>Bondgenoot­schap opzeggen</button>`;
     else h+=`<button class="btn blue" data-dip="ally" ${dis}>Bondgenoot­schap</button>`;
     if(!war&&!trading(ME,o))h+=`<button class="btn" data-dip="trade" ${dis}>Handel (+5% geld)</button>`;
-    h+='</div><div class="note">Aanvallen, bombarderen en voorstellen kosten 1 bevel.</div>';
+    if(!war){if(!isHuman(o))h+=`<button class="btn" data-dip="ask" ${dis}>Vraag om aan te vallen</button>`;h+=`<button class="btn" data-dip="give" ${dis}>Steun geven</button>`;if(!isHuman(o))h+=`<button class="btn" data-dip="join" ${dis}>Vraag om bij je te horen</button>`}
+    h+='</div><div class="note">Aanvallen, bombarderen, steun en voorstellen kosten 1 bevel.</div>';
     const wars=[...dip().war[o]].filter(x=>x!==ME);if(wars.length)h+=`<div class="note">Ook in oorlog met: ${wars.slice(0,4).map(x=>esc(natName(x))).join(', ')}</div>`;
   }
-  h+='</div>';P.innerHTML=h;P.classList.add('open');
+  h+='</div>';P.innerHTML=h;P.classList.add('open');$('#app').classList.add('pnl');
   $('#pClose').onclick=()=>selectNation(-1);
   const rk=$('#rkB');if(rk)rk.onclick=()=>openRijk('buy');
   const ra=$('#rkA');if(ra)ra.onclick=()=>openRijk('army');
@@ -1016,12 +1078,19 @@ function renderPanel(){
 }
 function dipAction(type,o){
   const N=G.N[ME];N.asked=N.asked||{};const key=o+type;
+  if(type==='give'){openGive(o);return}
   if(!isHuman(o)&&N.asked[key]===G.round){toast(`${esc(natName(o))} heeft deze ronde al geantwoord.`);return}
+  if(type==='ask'){openAsk(o);return}
+  if(type==='join'){if(!useAP())return;N.asked[key]=G.round;
+    if(acceptJoin(o,ME)){mergeInto(o,ME,null);toast(`<b>${esc(natName(o))}</b> sluit zich bij je aan! Hun land en leger zijn nu van jou.`,'win');selN=-1}
+    else{addOp(o,ME,-4);toast(`${esc(natName(o))} wil zelfstandig blijven.`,'lose')}
+    dirty();markSeen();G.rev++;afterAction();return}
   if(!useAP())return;
   if(type==='breakAl'){delete G.al[pk(ME,o)];dipDirty();addOp(o,ME,-35);addLog(`${natName(ME)} zegt het bondgenootschap met ${natName(o)} op`,[ME,o],'war');G.rev++;afterAction();return}
   if(type==='surr'){N.asked[key]=G.round;const r=considerSurrender(o,ME,true);
     if(r==='cap'){toast(`<b>${esc(natName(o))} capituleert!</b> Al hun land is nu van jou.`,'win');selN=-1}
     else if(r==='last')toast(`${esc(natName(o))} weigert en vecht tot het bittere einde.`,'lose');
+    else if(r==='peace'){toast(`${esc(natName(o))} wil zich niet overgeven, maar biedt vrede aan.`,'win');setTimeout(showOffers,300)}
     else toast(`${esc(natName(o))} lacht je uit: ze zijn nog lang niet verslagen.`,'lose');
     dirty();markSeen();G.rev++;afterAction();return}
   if(isHuman(o)){G.offers.push({type,from:ME,to:o,r:G.round});toast(`Voorstel verstuurd naar ${esc(G.hum[o]?.nick||natName(o))}.`);G.rev++;afterAction();return}
@@ -1077,6 +1146,43 @@ function openBomb(o,c){
       const sr=considerSurrender(o,ME);if(sr==='cap'){toast(`<b>${esc(natName(o))} capituleert!</b> Al hun land is nu van jou.`,'win');selN=-1}else if(sr==='last')toast(`${esc(natName(o))} vecht tot het bittere einde.`,'lose');
       dirty();markSeen();G.rev++;afterAction()}});
 }
+function openAsk(o,pay){
+  if(!myTurn()||!apLeft())return;const NB=nbrs();const s=stats();pay=pay||0;
+  const ts=[];for(let t=0;t<NN;t++){if(t===o||t===ME||G.N[t].dead||allied(o,t)||atWar(o,t))continue;if(NB[o].has(t)||canReach(o,t))ts.push(t)}
+  ts.sort((a,b)=>(atWar(ME,b)-atWar(ME,a))||(s[b].km-s[a].km));
+  const pays=[0,.1,.25].map(f=>+(G.N[ME].m*f).toFixed(3));
+  openSheet(`<h3>${natFlag(o)} ${esc(natName(o))} vragen om aan te vallen</h3><div class="note">Kies een land dat ${esc(natName(o))} kan bereiken. Ze zeggen eerder ja als ze je mogen, sterker zijn dan het doelwit, of als je betaalt.</div>
+   <div class="lbl">Betaling</div><div class="chips">${pays.map((v,i)=>`<button class="chip ${v===pay?'on':''}" data-pay="${v}">${i?fmtMoney(v):'Niets'}</button>`).join('')}</div>
+   <div class="lbl">Doelwit</div><div class="dlist">${ts.slice(0,14).map(t=>`<button class="drow" style="border:0;color:inherit;font:inherit;text-align:left" data-t="${t}">${natFlag(t)}<span>${esc(natName(t))}</span><span class="note" style="margin-left:auto">${atWar(ME,t)?'jouw vijand · ':''}${fmtT(s[t].troops)}</span></button>`).join('')||'<div class="note">Dit land kan niemand bereiken.</div>'}</div>
+   <button class="btn ghost wide" id="akC">Annuleer</button>`,sh=>{
+    sh.querySelector('#akC').onclick=closeSheet;
+    sh.querySelectorAll('[data-pay]').forEach(b=>b.onclick=()=>openAsk(o,+b.dataset.pay));
+    sh.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const t=+b.dataset.t;if(!useAP())return;const N=G.N[ME];N.asked=N.asked||{};N.asked[o+'ask']=G.round;closeSheet();
+      if(acceptAsk(o,ME,t,pay)){N.m-=pay;G.N[o].m+=pay;addOp(o,ME,4);declareWar(o,t);addLog(`Op verzoek van ${natName(ME)} valt ${natName(o)} ${natName(t)} aan!`,[ME,o,t],'war');
+        if(canReach(o,t)){const K=kit(o),NA=A(o),c=bestTheater(o,t),sc=srcCont(o,t,c);runBattle(o,t,NA.a[sc]*.5,6,{tk:NA.ka[sc]*.5,jt:K.jt*.4},c)}
+        toast(`<b>${esc(natName(o))}</b> valt ${esc(natName(t))} aan!`,'win')}
+      else{addOp(o,ME,-2);toast(`${esc(natName(o))} wil ${esc(natName(t))} niet aanvallen.`,'lose')}
+      dirty();markSeen();G.rev++;afterAction()})});
+}
+function openGive(o,c){
+  if(!myTurn()||BATTLE)return;if(!apLeft()){toast('Je bevelen voor deze ronde zijn op.','lose');return}
+  const NA=A(ME),K=kit(ME),cs=myConts(ME);if(c==null||!cs.includes(c))c=cs.reduce((b,x)=>NA.a[x]>NA.a[b]?x:b,cs[0]);
+  const money=Math.floor(G.N[ME].m*10)/10;
+  openSheet(`<h3>${natFlag(o)} Steun geven aan ${esc(natName(o))}</h3><div class="note">Geef troepen, wapens of geld. Ze vinden je daarna aardiger, en een sterke bondgenoot vecht beter mee.</div>
+   ${cs.length>1?`<div class="lbl">Troepen uit</div><div class="chips">${cs.map(x=>`<button class="chip ${x===c?'on':''}" data-gc="${x}">${CONTS[x]} · ${fmtT(NA.a[x])}</button>`).join('')}</div>`:''}
+   <div class="ulist">${urow('sd','Soldaten','helm',NA.a[c],0)}${urow('tk','Tanks','tank',NA.ka[c],0)}${urow('jt','Vliegtuigen','jet',K.jt,0)}${money>=.1?`<div class="urow">${svgI('fact')}<span class="un">Geld</span><input type="range" id="u_mo" min="0" max="${money}" step="0.1" value="0" aria-label="Geld"><b class="num" id="u_moV"></b></div>`:''}</div>
+   <div class="row"><button class="btn ghost" id="gC">Annuleer</button><button class="btn gold big" style="flex:1" id="gGo">GEVEN</button></div>`,sh=>{
+    const v=id=>{const e=sh.querySelector('#u_'+id);return e?+e.value:0};
+    const upd=()=>{sh.querySelectorAll('.urow input').forEach(e=>{sh.querySelector('#'+e.id+'V').innerHTML=e.id==='u_mo'?fmtMoney(+e.value):`${fmtN(+e.value)}<small> / ${fmtN(+e.max)}</small>`});sh.querySelector('#gGo').disabled=v('sd')+v('tk')+v('jt')+v('mo')<=0};
+    sh.querySelectorAll('.urow input').forEach(e=>e.oninput=upd);upd();
+    sh.querySelectorAll('[data-gc]').forEach(b=>b.onclick=()=>openGive(o,+b.dataset.gc));
+    sh.querySelector('#gC').onclick=closeSheet;
+    sh.querySelector('#gGo').onclick=()=>{if(!useAP())return;const [x,y]=subA(ME,c,v('sd'),v('tk'));const jt=Math.min(K.jt,v('jt')),mo=Math.min(G.N[ME].m,v('mo'));
+      K.jt-=jt;G.N[ME].m-=mo;const dc=ownsIn(o,c)?c:homeCont(o);addA(o,dc,x,y);kit(o).jt+=jt;G.N[o].m+=mo;
+      const val=x+y*TK_A+jt*JT+mo*5000;addOp(o,ME,clamp(Math.round(val/(stats()[o].power+1)*80),2,35));
+      addLog(`${natName(ME)} stuurt steun naar ${natName(o)}: ${[x?fmtT(x)+' soldaten':'',y?y+' tanks':'',jt?jt+' vliegtuigen':'',mo?fmtMoney(mo):''].filter(Boolean).join(', ')}`,[ME,o],'ally');
+      closeSheet();toast(`Steun verstuurd naar <b>${esc(natName(o))}</b>.`,'win');STATS=null;G.rev++;markSeen();afterAction()}});
+}
 function openMove(from,to){
   if(!myTurn()||BATTLE)return;if(!apLeft()){toast('Je bevelen voor deze ronde zijn op.','lose');return}
   const NA=A(ME),cs=myConts(ME);if(cs.length<2){toast('Je hebt maar land op één continent.');return}
@@ -1103,11 +1209,12 @@ function liveBattle(o,send,u,c){
   const border=[];for(let r=0;r<NR;r++){const ow=G.R.o[r];if((ow===ME||ow===o)&&CONT[r]===B.c&&R0[r].nb.some(j=>{const x=G.R.o[j];return (x===ME||x===o)&&x!==ow}))border.push(r)}
   focusBox(bboxOf(border.length?border:owned(o).filter(r=>CONT[r]===B.c)),0,8,40);
   const bar=el('div',{class:'livebar'});bar.innerHTML=`<div class="lb-side"><small>${esc(natName(ME))}</small><b class="num" id="lbA"></b></div>
-    <div class="lb-mid"><div class="lb-tug"><i id="lbT"></i></div><div class="lb-msg" id="lbM">Je troepen trekken de grens over…</div><div class="lb-score" id="lbS"></div></div>
+    <div class="lb-mid"><div class="lb-tug"><i id="lbT"></i></div><div class="lb-msg" id="lbM">Je troepen trekken de grens over…</div><div class="lb-mor"><span id="lbMA"></span><span id="lbMD"></span></div><div class="lb-score" id="lbS"></div></div>
     <div class="lb-side r"><small>${esc(natName(o))}</small><b class="num" id="lbD"></b></div>
     <button class="btn red big" id="lbStop">STOP</button>`;
   $('#app').appendChild(bar);
-  const upd=()=>{const E=defFront(B.def,B.att,B.naval);bar.querySelector('#lbA').textContent=fmtT(attPow(B));bar.querySelector('#lbD').textContent=fmtT(E.p);const sa=attPow(B)*B.am,sd=E.p*defDM(B.def);bar.querySelector('#lbT').style.width=clamp(sa/(sa+sd+1)*100,4,96)+'%';
+  const upd=()=>{const E=defFront(B.def,B.att,B.naval);bar.querySelector('#lbA').textContent=fmtT(attPow(B));bar.querySelector('#lbD').textContent=fmtT(E.p);const sa=attPow(B)*B.am,sd=E.p*defDM(B.def);bar.querySelector('#lbT').style.width=clamp((sa*B.mA*(1+.35*B.mom))/(sa*B.mA*(1+.35*B.mom)+sd*B.mD*(1-.35*B.mom)+1)*100,4,96)+'%';
+    const ml=m=>m>1.1?'hoog':m>.8?'goed':m>.55?'wankel':'gebroken';bar.querySelector('#lbMA').textContent='Moreel: '+ml(B.mA);bar.querySelector('#lbMD').textContent='Moreel: '+ml(B.mD);
     const un=[B.tk?B.tk+' tanks':'',B.jt?B.jt+' vliegt.':'',B.sh?B.sh+' schepen':''].filter(Boolean).join(' · ');
     bar.querySelector('#lbS').textContent=`${B.km.g>0?'+'+fmtKm(B.km.g)+' veroverd':'nog geen terreinwinst'}${B.km.l>0?' · −'+fmtKm(B.km.l)+' verloren':''}${un?' · '+un:''} · ronde ${B.step}/${B.maxSteps}`};
   upd();
@@ -1117,8 +1224,8 @@ function liveBattle(o,send,u,c){
     const head=B.surr==='cap'?'CAPITULATIE!':B.end==='elim'?'LAND VEROVERD!':g>l+500?'TERREIN GEWONNEN':l>g+500?'TERUGGEDRONGEN':'HET FRONT HOUDT STAND';
     bar.querySelector('#lbM').innerHTML=`<b style="font-family:var(--f-disp);font-size:18px;color:${good?'var(--green)':l>g+500?'var(--red)':'var(--brass2)'}">${head}</b>`;
     const ul=unitLossTxt(B.lost);
-    bar.querySelector('#lbS').textContent=`${B.surr==='cap'?natName(o)+' geeft zich over: al hun land is van jou. ':B.surr==='last'?natName(o)+' weigert zich over te geven en vecht tot het bittere einde. ':''}${B.end==='retreat'?'Je leger trekt zich terug. ':B.end==='stop'?'Je hebt de aanval gestopt. ':''}${B.dc!=null&&B.dc!==B.src?`Je troepen blijven in ${CONTS[B.dc]}. `:''}Jij verloor ${fmtT(B.aLoss)} soldaten${ul?' en '+ul:''}, zij ${fmtT(B.dLoss)}${B.kill.tk?' en '+B.kill.tk+' tanks':''}.`;
-    const b=bar.querySelector('#lbStop');b.textContent='KLAAR';b.className='btn gold big';b.onclick=()=>{bar.remove();toastRecent();afterAction();updateHint()};
+    bar.querySelector('#lbS').textContent=`${B.surr==='cap'?natName(o)+' geeft zich over: al hun land is van jou. ':B.surr==='last'?natName(o)+' weigert zich over te geven en vecht tot het bittere einde. ':B.surr==='peace'?natName(o)+' is uitgeput en vraagt om vrede. ':''}${B.end==='retreat'?(B.mA<.35?'Je soldaten zijn gedemoraliseerd en trekken zich terug. ':'Je leger trekt zich terug. '):B.end==='stop'?'Je hebt de aanval gestopt. ':''}${B.dc!=null&&B.dc!==B.src?`Je troepen blijven in ${CONTS[B.dc]}. `:''}Jij verloor ${fmtT(B.aLoss)} soldaten${ul?' en '+ul:''}, zij ${fmtT(B.dLoss)}${B.kill.tk?' en '+B.kill.tk+' tanks':''}.`;
+    const b=bar.querySelector('#lbStop');b.textContent='KLAAR';b.className='btn gold big';b.onclick=()=>{bar.remove();toastRecent();afterAction();updateHint();if(B.surr==='peace')showOffers()};
     afterAction(true);
   };
   const tick=()=>{if(!BATTLE)return;const fl=B.flipped.length,ll=B.lostR.length;stepBattle(B);
@@ -1132,8 +1239,23 @@ function toastRecent(){if(ME<0)return;const N=G.N[ME];const items=G.log.filter(l
 function markSeen(){if(ME>=0&&G.N[ME])G.N[ME].seen=Math.max(G.N[ME].seen||0,G.lc)}
 function toast(html,cls){const t=el('div',{class:'toast '+(cls||'')},html);$('#toasts').appendChild(t);while($('#toasts').children.length>3)$('#toasts').firstChild.remove();setTimeout(()=>t.remove(),4300)}
 function afterAction(quiet){if(!quiet)renderPanel();updateHud();req();persist()}
+let WB_OPEN=(()=>{try{return localStorage.getItem('wr-wb')!=='0'}catch(e){return true}})();
+function renderWarbox(){const W=$('#warbox');if(!G||G.pv||ME<0||G.N[ME].dead){W.hidden=true;return}
+  const D=dip();const wars=[...D.war[ME]],als=[...D.al[ME]];
+  const ic=k=>`<svg viewBox="0 0 24 24">${NICO[k]}</svg>`;
+  let h=`<button class="wbh" id="wbT" aria-expanded="${WB_OPEN}"><span class="w">${ic('war')}${wars.length}</span><span class="a">${ic('ally')}${als.length}</span><span style="font-size:12px">${wars.length?'In oorlog':'Geen oorlog'}</span><span class="chev">${WB_OPEN?'▲':'▼'}</span></button>`;
+  if(WB_OPEN&&(wars.length||als.length)){h+='<div class="wbb">';
+    if(wars.length){h+='<div class="wbl">In oorlog met</div>';
+      for(const e of wars){const help=[...D.al[e]].filter(x=>x!==ME);const fight=help.filter(x=>atWar(x,ME));
+        h+=`<button class="wbr" data-wn="${e}"><b>${natFlag(e)}${esc(natName(e))}<span class="num">${fmtT(G.N[e].t)}</span></b>${help.length?`<small>Werkt samen met: ${help.slice(0,4).map(x=>esc(natName(x))+(atWar(x,ME)?' ⚔':'')).join(', ')}${help.length>4?' +'+(help.length-4):''}</small>`:'<small>Staat er alleen voor</small>'}</button>`}}
+    if(als.length){h+='<div class="wbl">Jouw bondgenoten</div>';
+      for(const a of als){const fw=[...D.war[a]].filter(x=>atWar(x,ME));h+=`<button class="wbr al" data-wn="${a}"><b>${natFlag(a)}${esc(natName(a))}<span class="num">${fmtT(G.N[a].t)}</span></b>${fw.length?`<small>Vecht mee tegen: ${fw.slice(0,3).map(x=>esc(natName(x))).join(', ')}</small>`:''}</button>`}}
+    h+='</div>'}
+  W.innerHTML=h;W.hidden=false;
+  W.querySelector('#wbT').onclick=()=>{WB_OPEN=!WB_OPEN;try{localStorage.setItem('wr-wb',WB_OPEN?'1':'0')}catch(e){}renderWarbox()};
+  W.querySelectorAll('[data-wn]').forEach(b=>b.onclick=()=>{const n=+b.dataset.wn;selC=-1;selectNation(n);focusNation(n)})}
 function updateHud(){
-  if(!G||G.pv)return;const s=stats();const n=ME>=0?ME:curNation();
+  if(!G||G.pv){$('#warbox').hidden=true;return}renderWarbox();const s=stats();const n=ME>=0?ME:curNation();
   $('#empName').textContent=natName(n);$('#empRank').textContent=RANKS[rankOf(n)].nm;$('#empSw').style.background=natColor(n);
   $('#sMoney').textContent=fmtMoney(G.N[n].m);const net=s[n].inc-s[n].upk;$('#sInc').textContent=(net>=0?'+':'')+fmtMoney(net);$('#sTroops').textContent=fmtT(s[n].troops);$('#sPop').textContent=fmtPop(s[n].pop);
   const K=kit(n);$('#sKit').innerHTML=['tk','jt','sh','bm'].map(id=>`<i>${svgI(UI[id].ic)}${fmtN(K[id])}</i>`).join('');
@@ -1149,7 +1271,7 @@ $('#endTurn').onclick=()=>{
   if(!N.acted&&canAct()){toast('Geef eerst minstens één bevel: val een land aan of bouw iets.','lose');return}
   if(N.ap>0&&canAct()){openSheet(`<h3>Beurt beëindigen?</h3><div class="note" style="font-size:15px;color:var(--ink)">Je hebt nog ${N.ap} ${N.ap===1?'bevel':'bevelen'} over. Die vervallen als je nu stopt.</div><div class="row"><button class="btn ghost" id="eC">Verder spelen</button><button class="btn gold" style="flex:1" id="eGo">Einde beurt</button></div>`,s=>{s.querySelector('#eC').onclick=closeSheet;s.querySelector('#eGo').onclick=()=>{closeSheet();doEndTurn()}});return}
   doEndTurn()};
-function doEndTurn(){
+function doEndTurn(){TURN_DL=0;
   selectNation(-1);const eb=$('#endTurn');eb.textContent='DE WERELD BEWEEGT…';eb.disabled=true;
   setTimeout(()=>{endTurn();
     if(G.mode==='local'){ME=curNation();dirty()}
@@ -1157,7 +1279,15 @@ function doEndTurn(){
     afterAction();if(G.over){gameOver();return}
     if(G.mode==='local'&&G.order.length>1)handoff();else beginMyTurn();
   },40)}
-function beginMyTurn(){if(!G||G.over||ME<0||!myTurn())return;
+let TURN_DL=0,timerWarned=false;
+function updTimer(){const t=$('#timer');if(!t)return;if(!G||G.pv||G.over||!G.tl){t.hidden=true;return}
+  let dl=TURN_DL;if(myTurn()){if(!dl){t.hidden=true;return}}else if(G.mode==='online'&&G.ts)dl=G.ts+G.tl*1000;else{t.hidden=true;return}
+  const left=Math.max(0,Math.ceil((dl-Date.now())/1000));t.hidden=false;t.textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`;t.classList.toggle('low',left<=15);
+  if(myTurn()&&TURN_DL){if(left<=15&&!timerWarned){timerWarned=true;toast('<b>Nog 15 seconden!</b> Schiet op.','lose')}if(left<=0){TURN_DL=0;timeUp()}}}
+function timeUp(){toast('<b>De tijd is op!</b> Je beurt is voorbij.','lose');const wasB=!!BATTLE;if(wasB){const b=$('#lbStop');if(b)b.click()}
+  setTimeout(()=>{const b=$('#lbStop');if(b&&!BATTLE)b.click();closeSheet();if(myTurn()&&!G.over&&!BATTLE)doEndTurn()},wasB?500:50)}
+setInterval(updTimer,250);
+function beginMyTurn(){if(!G||G.over||ME<0||!myTurn())return;TURN_DL=G.tl?Date.now()+G.tl*1000:0;timerWarned=false;updTimer();
   const lost=(G.fx||[]).filter(r=>G.R.o[r]!==ME||(G.occ[r]&&G.occ[r][0]!==ME));G.fx=[];
   if(lost.length){const t=performance.now();lost.forEach((r,i)=>flashes.push({r,t0:t+i*200,d:2800,c:'255,200,80'}));focusBox(bboxOf(lost),0,6);req()}
   showNews(()=>{const N=G.N[ME];
@@ -1182,7 +1312,7 @@ function showOffers(){
   const off=G.offers.find(o=>o.to===ME);if(!off)return;
   G.offers=G.offers.filter(o=>o!==off);
   const f=off.from;let txt='',yes='Accepteren';
-  if(off.type==='peace')txt=`${esc(natName(f))} vraagt om vrede.`;
+  if(off.type==='peace')txt=off.cede?`${esc(natName(f))} is uitgeput en biedt vrede aan. Het land dat je bezet houdt wordt van jou.`:`${esc(natName(f))} vraagt om vrede.`;
   if(off.type==='help'){txt=`Je bondgenoot ${esc(natName(f))} is aangevallen door ${esc(natName(off.vs))} en vraagt je om mee te vechten.`;yes='Oorlog verklaren'}
   if(off.type==='ally')txt=`${esc(natName(f))} wil een bondgenootschap met je sluiten.`;
   if(off.type==='trade')txt=`${esc(natName(f))} stelt een handelsverdrag voor (+5% inkomen voor allebei).`;
@@ -1290,6 +1420,9 @@ function showHelp(){
   <p style="margin:0 0 8px"><b>Doel.</b> Word het grootste land ter wereld. Na de laatste ronde wint wie het meeste land heeft.</p>
   <p style="margin:0 0 8px"><b>Aanvallen.</b> Tik op een buurland en dan op Aanvallen. Kies hoeveel soldaten je stuurt. Veroverd land krijgt meteen jouw kleur en het front schuift over de hele grens op. Verdedigers vechten thuis sterker en geluk speelt mee. Druk op STOP wanneer je wilt; het front blijft staan voor je volgende aanval.</p>
   <p style="margin:0 0 8px"><b>Continenten.</b> Soldaten en tanks staan op een continent en verdedigen alleen daar. Heb je land op een ander continent, verplaats dan troepen (tik op je eigen land). Een gebied zonder leger wordt snel veroverd. Vliegtuigen, schepen en bommen kunnen overal heen, en vliegtuigen laten het front sneller opschuiven.</p>
+  <p style="margin:0 0 8px"><b>Gevechten.</b> Niet alleen het grootste leger wint. Moreel, het initiatief en uitputting bepalen wie die dag beter vecht, dus het front gaat heen en weer. Een land dat moe is van de oorlog of zijn hoofdstad kwijt is, geeft zich eerder over of vraagt om vrede.</p>
+  <p style="margin:0 0 8px"><b>Diplomatie.</b> Vraag andere landen om iemand aan te vallen, geef ze troepen, wapens of geld, of vraag of ze bij je land willen horen.</p>
+  <p style="margin:0 0 8px"><b>Tijd.</b> Je hebt per beurt beperkt tijd (rechtsonder). Is die op, dan eindigt je beurt vanzelf.</p>
   <p style="margin:0 0 8px"><b>Bevelen.</b> Elke ronde heb je een paar bevelen (gele bolletjes). Aanvallen, bouwen of een voorstel doen kost 1 bevel.</p>
   <p style="margin:0 0 8px"><b>Groeien.</b> Elke ronde komen er vanzelf soldaten bij uit je bevolking. Bouw woningen voor meer inwoners en kazernes voor meer soldaten. Hoe groter je land, hoe hoger je rang en hoe meer bevelen.</p>
   <p style="margin:0 0 8px"><b>Leger &amp; wapens.</b> Koop soldaten, tanks, gevechtsvliegtuigen, oorlogsschepen en bommen (knop Materieel bovenin). Bij een aanval kies je wat je meestuurt. Schepen heb je nodig om over zee aan te vallen. Met bommen verzwak je een vijand vooraf.</p>
@@ -1298,7 +1431,7 @@ function showHelp(){
 function countryBtns(ids,selNn,taken){return `<div class="clist2">${ids.map(n=>`<button class="cbtn ${selNn===n?'on':''}" data-n="${n}" ${taken&&taken.has(n)?'disabled':''}>${natFlag(n)}<span>${esc(NAT[n].name)}</span></button>`).join('')}</div>`}
 function startPick(mode){
   closeScreen();cancelAnimationFrame(drift);G=previewState();dirty();
-  PICK={mode,players:[],cur:-1,diff:-1,opts:{maxR:30}};setMode('pick');resize();cam.s=minS();cam.x=-(WW*cam.s-VW)/2;clampCam();renderPick();req();
+  PICK={mode,players:[],cur:-1,diff:-1,opts:{maxR:30,tl:90}};setMode('pick');resize();cam.s=minS();cam.x=-(WW*cam.s-VW)/2;clampCam();renderPick();req();
 }
 function renderPick(){
   const P=PICK;const card=$('#pickcard');const n=P.cur;const taken=new Set(P.players.map(p=>p.nation));
@@ -1330,10 +1463,12 @@ $('#pkBack').onclick=()=>{if(PICK&&PICK.diff>=0&&!PICK.players.length){PICK.diff
 $('#pkOpts').onclick=()=>pickOptions();
 function pickOptions(){const o=PICK.opts;
   openSheet(`<h3>Spelopties</h3><div class="opt"><b>Aantal rondes</b><div class="note">Hoe lang het spel duurt. Daarna wint het grootste land.</div><div class="chips">${[20,30,45,0].map(v=>`<button class="chip ${o.maxR===v?'on':''}" data-r="${v}">${v||'Onbeperkt'}</button>`).join('')}</div></div>
-   <button class="btn gold wide" id="poC">Klaar</button>`,s=>{s.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{o.maxR=+b.dataset.r;pickOptions()});s.querySelector('#poC').onclick=closeSheet})}
+   <div class="opt"><b>Tijd per beurt</b><div class="note">Is de tijd op, dan eindigt je beurt vanzelf.</div><div class="chips">${TL_OPTS.map(([v,l])=>`<button class="chip ${(o.tl??90)===v?'on':''}" data-tl="${v}">${l}</button>`).join('')}</div></div>
+   <button class="btn gold wide" id="poC">Klaar</button>`,s=>{s.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{o.maxR=+b.dataset.r;pickOptions()});s.querySelectorAll('[data-tl]').forEach(b=>b.onclick=()=>{o.tl=+b.dataset.tl;pickOptions()});s.querySelector('#poC').onclick=closeSheet})}
+const TL_OPTS=[[60,'1 min'],[90,'1,5 min'],[150,'2,5 min'],[0,'Geen']];
 function beginGame(mode,humans){
   const o=PICK.opts;const diff=PICK.diff;PICK=null;
-  G=initialState({mode,humans,maxR:o.maxR,diff});ME=G.order[0];startTurn(ME);addLog('Het spel is begonnen!',[],'info');
+  G=initialState({mode,humans,maxR:o.maxR,diff,tl:o.tl??90});ME=G.order[0];startTurn(ME);addLog('Het spel is begonnen!',[],'info');
   G.order.forEach(n=>{G.N[n].seen=G.lc;if(n!==ME)G.N[n].ap=apMax(n)});G.N[ME].lastR=0;
   startPlaying();if(mode==='local')handoff();
 }
@@ -1393,7 +1528,8 @@ function enterLobby(code){
     const taken=new Set(NET.players.filter(p=>p.id!==NET.uid&&p.nation>=0).map(p=>p.nation));
     s.querySelector('#lp').innerHTML=NET.players.map((p,i)=>`<div class="pl"><i style="background:${PALETTE[i%PALETTE.length]}"></i><b>${esc(p.nick)}</b>${p.id===g.host?' <span class="note">host</span>':''}<span class="r">${p.nation>=0?esc(NAT[p.nation].name):'kiest…'}</span></div>`).join('');
     const ho=s.querySelector('#hostOpts');
-    ho.innerHTML=`<div class="lbl">Modus</div><div class="chips">${MODES.map((m,i)=>`<button class="chip ${i===(g.diff??1)?'on':''}" data-d="${i}" ${isHost()?'':'disabled'}>${m.nm}</button>`).join('')}</div>${isHost()?`<div class="lbl">Rondes</div><div class="chips">${[20,30,45,0].map(v=>`<button class="chip ${g.maxR===v?'on':''}" data-r="${v}">${v||'∞'}</button>`).join('')}</div>`:''}`;
+    ho.innerHTML=`<div class="lbl">Modus</div><div class="chips">${MODES.map((m,i)=>`<button class="chip ${i===(g.diff??1)?'on':''}" data-d="${i}" ${isHost()?'':'disabled'}>${m.nm}</button>`).join('')}</div>${isHost()?`<div class="lbl">Rondes</div><div class="chips">${[20,30,45,0].map(v=>`<button class="chip ${g.maxR===v?'on':''}" data-r="${v}">${v||'∞'}</button>`).join('')}</div><div class="lbl">Tijd per beurt</div><div class="chips">${TL_OPTS.map(([v,l])=>`<button class="chip ${(g.tl??90)===v?'on':''}" data-tl="${v}">${l}</button>`).join('')}</div>`:''}`;
+    ho.querySelectorAll('[data-tl]').forEach(b=>b.onclick=()=>NET.db.doc('games/'+code).update({tl:+b.dataset.tl}).catch(()=>{}));
     ho.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>NET.db.doc('games/'+code).update({diff:+b.dataset.d}).catch(()=>{}));
     ho.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>NET.db.doc('games/'+code).update({maxR:+b.dataset.r}).catch(()=>{}));
     s.querySelector('#lGo').hidden=!isHost();
@@ -1405,7 +1541,7 @@ function enterLobby(code){
     const ps=NET.players;const ns=ps.map(p=>p.nation);const M=MODES[NET.game.diff??1];
     if(ps.some(p=>p.nation<0||!M.ids.includes(p.nation))){s.querySelector('#lErr').textContent='Nog niet iedereen heeft een land uit deze modus gekozen.';return}
     if(new Set(ns).size!==ns.length){s.querySelector('#lErr').textContent='Twee spelers hebben hetzelfde land gekozen.';return}
-    const g=NET.game;G=initialState({mode:'online',code,humans:ps.map((p,i)=>({nick:p.nick,nation:p.nation,uid:p.id,color:PALETTE[i%PALETTE.length]})),maxR:g.maxR,diff:g.diff??1});
+    const g=NET.game;G=initialState({mode:'online',code,humans:ps.map((p,i)=>({nick:p.nick,nation:p.nation,uid:p.id,color:PALETTE[i%PALETTE.length]})),maxR:g.maxR,diff:g.diff??1,tl:g.tl??90});
     startTurn(G.order[0]);addLog('Het online spel is begonnen!',[],'info');G.order.forEach(n=>{G.N[n].seen=G.lc;G.N[n].ap=G.N[n].ap||apMax(n)});
     try{await NET.db.doc('games/'+code).update({status:'playing',state:JSON.stringify(G),rev:G.rev})}catch(e){s.querySelector('#lErr').textContent='Starten lukte niet: '+(e.message||e)}
   };
