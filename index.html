@@ -1758,6 +1758,7 @@ function welcome(then){let seen=false;try{seen=localStorage.getItem('wr-tut')===
 function startClock(){if(G&&!G.over&&ME>=0&&myTurn()&&G.N[ME].thrW!==G.round&&threatOf(ME).lvl===2){G.N[ME].thrW=G.round;toast(`<b>Coalitiegevaar!</b> ${esc(threatOf(ME).mem.slice(0,3).map(natName).join(', '))} zijn bang van je en kunnen samen aanvallen.`,'war')}
   if(!TURN_DL&&G&&G.tl&&!G.over&&myTurn()&&ME>=0){TURN_DL=Date.now()+G.tl*1000;timerWarned=false;updTimer()}}
 function beginMyTurn(){if(!G||G.over||ME<0||!myTurn())return;roundBanner();TURN_DL=0;timerWarned=false;updTimer();
+  {const tok=G.round+'.'+G.turn;setTimeout(()=>{if(G&&!G.over&&myTurn()&&G.round+'.'+G.turn===tok)startClock()},G.mode==='online'?8000:30000)}
   const lost=(G.fx||[]).filter(r=>G.R.o[r]!==ME||(G.occ[r]&&G.occ[r][0]!==ME));G.fx=[];
   if(lost.length){const t=performance.now();lost.forEach((r,i)=>flashes.push({r,t0:t+i*200,d:2800,c:'255,200,80'}));focusBox(bboxOf(lost),0,6);req()}
   const nb=G.N[ME].nb||[];G.N[ME].nb=[];if(nb.length){sfx('alarm');toast(`<b>Kernaanval op je land!</b> ${nb.length>1?nb.length+' gebieden zijn':'Een gebied is'} getroffen.`,'lose');nb.forEach((r,i)=>setTimeout(()=>{const t=performance.now(),b=R0[r].bb;FX.push({k:'blast',x:R0[r].lx,y:R0[r].ly,R:clamp(Math.max(b[2]-b[0],b[3]-b[1])*.6,6,40),t0:t,d:2600});nukeFlash();sfx('nuke');req()},900+i*1600));focusBox(bboxOf(nb),0,5)}
