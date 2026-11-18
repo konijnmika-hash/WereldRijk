@@ -5,6 +5,13 @@ Strategiespel in de browser: verover de wereld, alleen, samen op één telefoon 
 **Spelen:** open `index.html`, of de GitHub Pages-site van deze repository.
 
 ## Wat zit erin
+- Een kalender: je begint op 1 januari 2026 en elke beurt is één maand; in de winter is oorlog in koude landen zwaarder
+- Een leger dat bij je bevolking past: werving per maand, maximale legergrootte, tankbemanning en piloten hangen af van je inwoners; wapens zijn duur en kosten onderhoud
+- Mobilisatie: in 2026 groeien alle legers (ook van de computer) nog langzaam
+- Onderzoek: drones, precisiebommen, luchtafweer, kruisraketten, bunkerbrekers, stealthbommenwerpers, EMP-raketten, hypersone raketten en de waterstofbom
+- Vertrouwen: wie een bondgenoot of handelspartner aanvalt, wordt door de hele wereld minder vertrouwd
+- Tik op een land om te zien met wie het samenwerkt en met wie het in oorlog is; echte bondgenootschappen en handelsverdragen bij de start
+- Nieuws onder kopjes: samenvoegingen en verbonden, oorlog, veroverd land, vrede en diplomatie
 - Echte landen, een front dat over de hele grens opschuift, terrein, moreel en oorlogsmoeheid
 - Legers per continent, met op de kaart bij elk continent hoeveel soldaten en tanks er staan
 - Kernwapens: Kernprogramma, Raketschild, doelwit kiezen op de kaart, radioactieve neerslag en kernmachten die terugslaan
