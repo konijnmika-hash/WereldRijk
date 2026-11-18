@@ -248,7 +248,7 @@ input[type=text]{background:var(--panel2);border:1px solid var(--line);border-ra
 .livebar .lb-mid{display:flex;flex-direction:column;gap:4px;min-width:0;text-align:center}
 .lb-tug{height:10px;border-radius:6px;background:#ffc04d;overflow:hidden}.lb-tug i{display:block;height:100%;background:#ff2b45;transition:width .5s ease}
 .lb-msg{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lb-score{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-score{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lb-score.final{white-space:normal;line-height:1.3}
 .livebar .btn{padding:10px 16px}
 @media (max-width:600px){.livebar{grid-template-columns:auto 1fr auto;}.livebar .btn{grid-column:1/-1}}
 button.stat{color:inherit;font:inherit;text-align:left;cursor:pointer}
@@ -270,7 +270,9 @@ button.stat{color:inherit;font:inherit;text-align:left;cursor:pointer}
   #toasts{top:calc(98px + env(safe-area-inset-top,0px));width:calc(100% - 24px)}
   #warbox{top:calc(98px + env(safe-area-inset-top,0px));width:min(250px,calc(60vw - 34px))}
   #app.pnl #warbox{display:block}
-  #goalbox{top:calc(98px + env(safe-area-inset-top,0px));width:min(200px,40vw)}#goalbox .cnt{display:none}#app.pnl #goalbox{display:none}
+  #goalbox{top:calc(98px + env(safe-area-inset-top,0px));width:min(200px,40vw)}#goalbox .cnt{display:none}
+  .stat.ap{order:-1}#warbox .wbh{white-space:nowrap;gap:7px;font-size:12px;letter-spacing:.02em}
+  #app .tbar{top:calc(146px + env(safe-area-inset-top,0px));font-size:14px}#app.pnl #goalbox{display:none}
   #timer{height:44px;min-width:58px;font-size:15px}
   #hint{bottom:calc(70px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 32px);font-size:12.5px}
   #pickcard{left:10px;right:10px;width:auto;max-height:54vh}
@@ -288,7 +290,7 @@ button.stat{color:inherit;font:inherit;text-align:left;cursor:pointer}
 .nukeinfo{display:flex;gap:8px;align-items:center;background:#c8ff4612;border:1px solid #c8ff4640;color:#e4ffb0;border-radius:8px;padding:6px 9px;font-size:13px}.nukeinfo svg{width:18px;height:18px;flex:none;color:#c8ff46}
 .warn.danger{background:#ff3b4e1c;border-color:#ff3b4e66;color:#ffc2c8}
 .nukeh svg{width:24px;height:24px;color:#c8ff46}
-.tbar{position:absolute;left:50%;transform:translateX(-50%);top:calc(56px + env(safe-area-inset-top,0px));z-index:12;display:flex;gap:12px;align-items:center;background:#1b2408f2;border:1px solid #c8ff46;border-radius:12px;padding:8px 8px 8px 14px;box-shadow:0 0 30px #c8ff4633;font-size:15px;max-width:calc(100% - 24px);box-sizing:border-box}
+.tbar{position:absolute;left:0;right:0;margin:0 auto;width:max-content;top:calc(56px + env(safe-area-inset-top,0px));z-index:12;display:flex;gap:12px;align-items:center;background:#1b2408f2;border:1px solid #c8ff46;border-radius:12px;padding:8px 8px 8px 14px;box-shadow:0 0 30px #c8ff4633;font-size:15px;max-width:calc(100% - 24px);box-sizing:border-box}
 .tbar>span{display:flex;gap:8px;align-items:center}.tbar svg{width:22px;height:22px;color:#c8ff46;flex:none;animation:spin 3s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .evcard{display:flex;flex-direction:column;gap:10px}.evch{display:flex;flex-direction:column;gap:7px}.evch .btn{text-align:left;padding:11px 13px;font-size:14.5px}
@@ -308,6 +310,8 @@ button.stat{color:inherit;font:inherit;text-align:left;cursor:pointer}
 .help .hc{display:grid;grid-template-columns:24px 1fr;gap:2px 10px;background:var(--panel2);border-radius:10px;padding:9px 11px;font-size:13.5px;line-height:1.4;color:#d4dee6}
 .help .hc svg{grid-row:1/3;width:22px;height:22px;color:var(--brass2);margin-top:1px}.help .hc b{font-family:var(--f-disp);font-size:14.5px;color:var(--ink)}
 .feat{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}.feat span{font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:20px;background:#ffffff10;border:1px solid #ffffff22;color:#dfe8ee}
+.confetti{position:absolute;inset:0;z-index:45;pointer-events:none;overflow:hidden}.confetti i{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;animation:conf linear forwards}
+@keyframes conf{to{transform:translate(var(--x),105vh) rotate(var(--r));opacity:.9}}
 .nflash{position:absolute;inset:0;z-index:18;pointer-events:none;background:radial-gradient(circle at 50% 50%,#fffef0,#ffd27a 40%,#ff7a1a00 80%);animation:nfl 1.2s ease-out forwards}
 @keyframes nfl{0%{opacity:0}8%{opacity:.95}100%{opacity:0}}
 #map.quake{animation:quake .7s}
@@ -1237,6 +1241,9 @@ function playNuke(a,r,res,cb){const f=capOf(a),t0=performance.now();const fr=f>=
   setTimeout(()=>{const t=performance.now();if(res&&res.intercepted){FX.push({k:'shot',x:to.lx,y:to.ly,t0:t,d:900});sfx('click')}
     else{const b=to.bb,Rr=clamp(Math.max(b[2]-b[0],b[3]-b[1])*.6,6,40);FX.push({k:'blast',x:to.lx,y:to.ly,R:Rr,t0:t,d:2600});
       (res?res.regs:[r]).forEach((x,i)=>flashes.push({r:x,t0:t+i*90,d:2400,c:'255,250,220'}));nukeFlash();sfx('nuke')}req();cb&&cb()},d)}
+function confetti(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const c=el('div',{class:'confetti'});const cols=['#ffd27a','#e0a63a','#fff3d1','#47d18c','#4cc9f0','#ff7ac6'];
+  for(let i=0;i<70;i++){const p=document.createElement('i');p.style.cssText=`left:${Math.random()*100}%;background:${cols[i%cols.length]};animation-delay:${Math.random()*.8}s;animation-duration:${2.2+Math.random()*1.6}s;--r:${Math.random()*720-360}deg;--x:${Math.random()*120-60}px`;c.appendChild(p)}
+  $('#app').appendChild(c);setTimeout(()=>c.remove(),4800)}
 function nukeFlash(){const f=el('div',{class:'nflash'});$('#app').appendChild(f);setTimeout(()=>f.remove(),1300);cv.classList.remove('quake');void cv.offsetWidth;cv.classList.add('quake')}
 function contactPt(r,o){let sx=0,sy=0,c=0;const R=R0[r];for(const {pts,e} of R.rings){let k=0;for(let j=0;j<e.length;j+=2){const nb=e[j],cnt=e[j+1];if(nb>=0&&G.R.o[nb]===o){for(let q=0;q<=cnt;q+=Math.max(1,cnt>>2)){sx+=pts[(k+q)*2];sy+=pts[(k+q)*2+1];c++}}k+=cnt}}
   if(c)return [sx/c,sy/c];let best=null,bd=1e18;for(let j=0;j<NR;j++)if(G.R.o[j]===o){const d=(R0[j].lx-R.lx)**2+(R0[j].ly-R.ly)**2;if(d<bd){bd=d;best=R0[j]}}
@@ -1339,8 +1346,12 @@ function regionAt(px,py){
   return bi;
 }
 function zoomAt(f,px,py){const s0=cam.s;cam.s=clamp(cam.s*f,minS(),40);const k=cam.s/s0;cam.x=px-(px-cam.x)*k;cam.y=py-(py-cam.y)*k;clampCam();req()}
-function flyTo(wx,wy,s){const s0={...cam};const s1=clamp(s||cam.s,minS(),40);const t0=performance.now();
-  const step=()=>{const k=clamp((performance.now()-t0)/500,0,1),e=k<.5?2*k*k:1-(-2*k+2)**2/2;cam.s=s0.s+(s1-s0.s)*e;const tx=VW/2-wx*s1,ty=VH/2-wy*s1;cam.x=s0.x+(tx-s0.x)*e;cam.y=s0.y+(ty-s0.y)*e;clampCam();draw();if(k<1)requestAnimationFrame(step)};step()}
+// The part of the screen not covered by the side panel (phone: the panel sits at the bottom).
+function freeView(){const P=$('#panel');if(!P||!P.classList.contains('open'))return [VW/2,VH/2];
+  if(P.offsetTop>VH*.3)return [VW/2,Math.max(60,(100+P.offsetTop)/2)];return [Math.max(60,P.offsetLeft/2),VH/2]}
+function inFreeView(x,y){const P=$('#panel');if(!P||!P.classList.contains('open'))return true;return P.offsetTop>VH*.3?y<P.offsetTop-12:x<P.offsetLeft-12}
+function flyTo(wx,wy,s){const s0={...cam};const s1=clamp(s||cam.s,minS(),40);const t0=performance.now();const [fx,fy]=freeView();
+  const step=()=>{const k=clamp((performance.now()-t0)/500,0,1),e=k<.5?2*k*k:1-(-2*k+2)**2/2;cam.s=s0.s+(s1-s0.s)*e;const tx=fx-wx*s1,ty=fy-wy*s1;cam.x=s0.x+(tx-s0.x)*e;cam.y=s0.y+(ty-s0.y)*e;clampCam();draw();if(k<1)requestAnimationFrame(step)};step()}
 function bboxOf(list){let a=[1e9,1e9,-1e9,-1e9];for(const r of list){if(R0[r].km<1500&&list.length>2)continue;const b=R0[r].bb;a=[Math.min(a[0],b[0]),Math.min(a[1],b[1]),Math.max(a[2],b[2]),Math.max(a[3],b[3])]}if(a[0]>1e8&&list.length)a=R0[list[0]].bb.slice();return a}
 function focusBox(a,offX,maxS,dy){if(a[0]>1e8)return;const w=a[2]-a[0]+30,h=a[3]-a[1]+30;const s=Math.min(VW*.5/w,VH*.5/h,maxS||6);flyTo((a[0]+a[2])/2-(offX||0)/s,(a[1]+a[3])/2+(dy||0)/s,s)}
 function focusNation(n,offX){if(labelsDirty&&G)buildNatLabels();const L=natLabels.find(l=>l.n===n);focusBox(bboxOf(L?L.comp:owned(n)),offX)}
@@ -1389,6 +1400,7 @@ function onTap(x,y){
   if(G.pv)return;
   if(NUKE_T){if(r>=0&&G.R.o[r]===NUKE_T.o)openNukeConfirm(r);else toast(`Tik op een gebied van <b>${esc(natName(NUKE_T.o))}</b>, of druk op Annuleer.`);return}
   selC=r>=0?CONT[r]:-1;selectNation(r>=0?G.R.o[r]:-1);
+  if(r>=0&&!inFreeView(x,y))flyTo((x-cam.x)/cam.s,(y-cam.y)/cam.s,cam.s);
 }
 function selectNation(n){selN=n;bordersDirty=true;renderPanel();req()}
 function useAP(){const N=G.N[ME];if((N.ap||0)<=0){toast('Je bevelen voor deze ronde zijn op. Beëindig je beurt.','lose');return false}N.ap--;N.acted=1;return true}
@@ -1491,8 +1503,8 @@ function startNuke(o){if(!myTurn()||BATTLE)return;if(!apLeft()){toast('Je bevele
 function endNukeT(keep){NUKE_T=null;document.querySelectorAll('.tbar').forEach(x=>x.remove());if(!keep)selN=-1;bordersDirty=true;renderPanel();req()}
 function openNukeConfirm(r){const o=G.R.o[r],E=nukeEst(ME,r);const cap=R0[r].cap&&R0[r].n0===o;
   openSheet(`<h3 class="nukeh">${svgI('atom')} Kernaanval op ${esc(natName(o))}</h3>
-   <div class="grid2"><div class="kv"><small>Doelwit</small><b>${cap?'De hoofdstad':'Gebied'} · ${CONTS[E.c]}</b></div><div class="kv"><small>Inwoners</small><b class="num">${fmtPop(G.R.p[r])}</b></div>
-   <div class="kv"><small>Hun leger dat omkomt</small><b class="num">~${fmtT(E.sd)}${E.tk>=1?' + '+fmtN(E.tk)+' tanks':''}</b></div><div class="kv"><small>Kans dat hij wordt neergeschoten</small><b class="num">${Math.round(E.shield*100)}%</b></div></div>
+   <div class="grid2"><div class="kv"><small>Doelwit in ${CONTS[E.c]}</small><b>${cap?'De hoofdstad':'Een gebied'}</b></div><div class="kv"><small>Inwoners</small><b class="num">${fmtPop(G.R.p[r])}</b></div>
+   <div class="kv"><small>Hun leger dat omkomt</small><b class="num">~${fmtT(E.sd)}${E.tk>=1?' + '+fmtN(E.tk)+' tanks':''}</b></div><div class="kv"><small>Kans op onderschepping</small><b class="num">${Math.round(E.shield*100)}%</b></div></div>
    ${!atWar(ME,o)?'<div class="warn">Dit is een oorlogsverklaring.</div>':''}
    <div class="warn danger">De hele wereld zal je haten. Alle landen denken veel slechter over je, en buren en bondgenoten van ${esc(natName(o))} kunnen je de oorlog verklaren.${E.ret?` <b>${esc(natName(o))} heeft zelf ${fmtN(kit(o).nk)} kernbommen en slaat vrijwel zeker terug.</b>`:''}</div>
    <div class="note">Het gebied wordt radioactief: het verliest het grootste deel van zijn inwoners en economie en blijft een paar rondes besmet. Kost 1 bevel en 1 kernbom.</div>
@@ -1637,7 +1649,7 @@ function liveBattle(o,send,u,c){
     const g=B.km.g,l=B.km.l;const good=B.surr==='cap'||B.end==='elim'||g>l+500;
     const head=B.surr==='cap'?'CAPITULATIE!':B.end==='elim'?'LAND VEROVERD!':g>l+500?'TERREIN GEWONNEN':l>g+500?'TERUGGEDRONGEN':'HET FRONT HOUDT STAND';
     bar.querySelector('#lbM').innerHTML=`<b style="font-family:var(--f-disp);font-size:18px;color:${good?'var(--green)':l>g+500?'var(--red)':'var(--brass2)'}">${head}</b>`;
-    const ul=unitLossTxt(B.lost);
+    const ul=unitLossTxt(B.lost);bar.querySelector('#lbS').classList.add('final');
     bar.querySelector('#lbS').textContent=`${B.surr==='cap'?natName(o)+' geeft zich over: al hun land is van jou. ':B.surr==='last'?natName(o)+' weigert zich over te geven en vecht tot het bittere einde. ':B.surr==='peace'?natName(o)+' is uitgeput en vraagt om vrede. ':''}${B.end==='retreat'?(B.mA<.35?'Je soldaten zijn gedemoraliseerd en trekken zich terug. ':'Je leger trekt zich terug. '):B.end==='stop'?'Je hebt de aanval gestopt. ':''}${B.dc!=null&&B.dc!==B.src?`Je troepen blijven in ${CONTS[B.dc]}. `:''}Jij verloor ${fmtT(B.aLoss)} soldaten${ul?' en '+ul:''}, zij ${fmtT(B.dLoss)}${B.kill.tk?' en '+B.kill.tk+' tanks':''}.`;
     const b=bar.querySelector('#lbStop');b.textContent='KLAAR';b.className='btn gold big';b.onclick=()=>{bar.remove();toastRecent();afterAction();updateHint();if(B.surr==='peace')showOffers()};
     afterAction(true);
@@ -1819,9 +1831,9 @@ $('#menuBtn').onclick=()=>{if(BATTLE)return;openSheet(`<h3>Menu</h3><div class="
    s.querySelector('#mmQuit').onclick=()=>{closeSheet();leaveOnline();showMenu()};
    const sk=s.querySelector('#mmSkip');if(sk)sk.onclick=()=>{if(Date.now()-G.ts<120000||myTurn()){toast('Je kunt de beurt van een ander pas na 2 minuten stilstand overslaan.');return}closeSheet();endTurn();pushOnline(true,true);afterAction()}})};
 function gameOver(){
-  sfx(G.hum[G.over.winner]?'win':'lose');const s=stats();const rows=[];for(let n=0;n<NN;n++)if(s[n].regs)rows.push(n);rows.sort((a,b)=>s[b].km-s[a].km);const w=G.over.winner;
+  sfx(G.hum[G.over.winner]?'win':'lose');if(G.hum[G.over.winner]&&(G.over.winner===ME||G.mode==='local'))confetti();const s=stats();const rows=[];for(let n=0;n<NN;n++)if(s[n].regs)rows.push(n);rows.sort((a,b)=>s[b].km-s[a].km);const w=G.over.winner;
   const meDead=ME>=0&&G.N[ME]&&G.N[ME].dead&&G.over.reason==='dood';const by=meDead?G.N[ME].by:null;
-  openSheet(`<div class="lbl">${G.over.reason==='wereld'?'Wereldheerschappij':G.over.reason==='dood'?'Je rijk is gevallen':'Laatste ronde gespeeld'}</div>${meDead?`<h3 style="font-size:26px">${esc(natName(ME))} bestaat niet meer</h3><div class="note">In ronde ${G.N[ME].dr||G.round} veroverde <b style="color:${by!=null?natColor(by):'inherit'}">${by!=null?esc(natName(by)):'de vijand'}</b> je laatste land. De grootste macht ter wereld is nu <b style="color:${natColor(w)}">${esc(natName(w))}</b>.</div>`:`<h3 style="font-size:28px"><span style="color:${natColor(w)}">${esc(natName(w))}</span> wint!</h3><div class="note">${G.hum[w]?esc(G.hum[w].nick)+' heeft het grootste land ter wereld gebouwd.':'Een computerland is de grootste macht ter wereld geworden.'}</div>`}
+  openSheet(`<div class="lbl">${G.over.reason==='wereld'?'Wereldheerschappij':G.over.reason==='dood'?'Je rijk is gevallen':'Laatste ronde gespeeld'}</div>${meDead?`<h3 style="font-size:26px">${esc(natName(ME))} bestaat niet meer</h3><div class="note">In ronde ${G.N[ME].dr||G.round} veroverde <b style="color:${by!=null?natColor(by):'inherit'}">${by!=null?esc(natName(by)):'de vijand'}</b> je laatste land. De grootste macht ter wereld is nu <b style="color:${natColor(w)}">${esc(natName(w))}</b>.</div>`:`<h3 style="font-size:28px"><span style="color:${natColor(w)}">${esc(natName(w))}</span> wint!</h3><div class="note">${w===ME&&G.order.length===1?'Gefeliciteerd! Je hebt het grootste land ter wereld gebouwd.':G.hum[w]?esc(G.hum[w].nick)+' heeft het grootste land ter wereld gebouwd.':'Een computerland is de grootste macht ter wereld geworden.'}</div>`}
    <div class="tw"><table class="board num"><tr><th>#</th><th>Land</th><th>Grootte</th><th>% wereld</th></tr>${rows.slice(0,8).map((n,i)=>`<tr class="${n===ME?'me':''}"><td>${i+1}</td><td>${natFlag(n)} ${esc(natName(n))}${G.hum[n]?' ('+esc(G.hum[n].nick)+')':''}</td><td>${fmtKm(s[n].km)}</td><td>${nl(s[n].km/WORLD_KM*100,1)}%</td></tr>`).join('')}</table></div>
    ${ME>=0&&G.N[ME]?`<div class="lbl">Jouw rijk: ${esc(natName(ME))}</div><div class="grid2" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))"><div class="kv"><small>Grootste omvang</small><b class="num">${fmtKm(Math.max(G.N[ME].pk||0,s[ME].km))}</b></div><div class="kv"><small>Deel van de wereld</small><b class="num">${nl(s[ME].km/WORLD_KM*100,1)}%</b></div><div class="kv"><small>Doelen gehaald</small><b class="num">${G.N[ME].msDone||0}</b></div><div class="kv"><small>Kernbommen gebruikt</small><b class="num">${G.N[ME].nkU||0}</b></div><div class="kv"><small>Rang</small><b>${RANKS[G.N[ME].rk||0].nm}</b></div></div>`:''}
    <div class="row"><button class="btn ghost" id="goMap">Bekijk kaart</button><button class="btn gold" style="flex:1" id="goNew">Nieuw spel</button></div>`,sh=>{sh.querySelector('#goMap').onclick=closeSheet;sh.querySelector('#goNew').onclick=()=>{closeSheet();leaveOnline();clearSave();showMenu()}})}
