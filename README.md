@@ -20,6 +20,19 @@ Strategiespel in de browser: verover de wereld, alleen, samen op één telefoon 
 - Diplomatie, coalities, overgave en samengaan van landen
 - Geluidseffecten (aan/uit in het menu)
 
+## Tijdperken
+In het menu kies je bij **Tijdperk** waar je begint: in 2026 of in een van 15 oorlogen, steeds op het hoogtepunt:
+Slag bij Kadesh (1274 v.Chr.), Grieks-Perzische oorlogen (480 v.Chr.), Peloponnesische Oorlog (431 v.Chr.), Punische oorlogen (218 v.Chr.),
+Verovering van Gallië (58 v.Chr.), Byzantijns-Perzische oorlog (622), Arabische veroveringen (732), Kruistochten (1140), Mongoolse veroveringen (1279),
+Honderdjarige Oorlog (1429), Dertigjarige Oorlog (1629), Zevenjarige Oorlog (1756), Napoleontische oorlogen (1812), Eerste Wereldoorlog (1918) en Tweede Wereldoorlog (1942).
+
+- Elk tijdperk heeft de landen, namen en grenzen van toen (bezet gebied hoort bij de bezetter, dus bijvoorbeeld het grootste Duitsland in 1942), met de bondgenootschappen en oorlogen van die maand
+- Je speelt elk land met zijn echte leger en economie; de kalender loopt vanaf die maand verder
+- Wapens passen bij de tijd: strijdwagens, ruiters, olifanten, ridders, katapulten, kanonnen, Grieks vuur; tanks en vliegtuigen pas in de wereldoorlogen
+- Een tijdperk is ook te openen met `index.html?tijd=ww2` (ids: kadesh, perzen, pelop, punisch, gallie, byzperz, arabisch, kruis, mongolen, honderd, dertig, zeven, napoleon, ww1, ww2)
+- De kaarten staan in `eras/`; ze worden gemaakt met de scripts in `tools/eras/` uit de historische grenzen van
+  [historical-basemaps](https://github.com/aourednik/historical-basemaps) plus eigen correcties per oorlog (`tools/eras/prepare.sh`, daarna `./build_all.sh`)
+
 ## Online spelen
 Online spelen loopt via gratis openbare MQTT-servers (EMQX, HiveMQ, Mosquitto), die over WebSocket bereikt worden.
 Een account is niet nodig. De spelstatus wordt als "retained" bericht opgeslagen, zodat je na het verversen
@@ -34,3 +47,5 @@ Let op: dit zijn openbare servers. Iedereen die de spelcode kent, kan meekijken.
 - `index.html`: het spel
 - `net.js`: online-laag (kleine documentdatabase op MQTT)
 - `vendor/mqtt.min.js`: MQTT.js 5.16.1 (MIT)
+- `eras/*.js`: de kaarten en landen per tijdperk
+- `tools/eras/`: scripts om de tijdperken opnieuw te bouwen
