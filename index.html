@@ -975,7 +975,7 @@ function msGen(n){const N=G.N[n];N.ms=N.ms||[];const have=new Set(N.ms.map(m=>m.
   if(!have.has('up')){const ids=['in','mb','vl','on','hu'].filter(id=>ul(n,id)<UPG[U[id]].max-1);if(ids.length){const id=ids[Math.floor(rnd()*ids.length)];opts.push({k:'up',id,b:ul(n,id)+2,t:`Bouw ${UPG[U[id]].nm} tot niveau ${ul(n,id)+2}`,rw:{m:+(upCost(n,U[id])*.9).toFixed(2)}})}}
   if(!have.has('ally')){const a=dip().al[n].size+1;opts.push({k:'ally',b:a,t:`Heb ${a} ${a===1?'bondgenoot':'bondgenoten'} tegelijk`,rw:{bm:40,m:+(inc*.6).toFixed(2)}})}
   if(!have.has('army'))opts.push({k:'army',b:Math.round(s.troops*1.6/1000)*1000,t:`Bouw een leger van ${fmtT(s.troops*1.6)} soldaten`,rw:{bm:30,tk:40}});
-  if(!have.has('cap')){const c=[...nbrs()[n]].filter(x=>!G.N[x].dead&&CAPR[x]!=null&&G.R.o[CAPR[x]]===x&&!allied(n,x)&&!isHuman(x));if(c.length){const x=c[Math.floor(rnd()*c.length)];opts.push({k:'cap',x,b:CAPR[x],t:`Verover de hoofdstad van ${natName(x)}`,rw:{m:+(inc*2.5).toFixed(2),jt:15}})}}
+  if(!have.has('cap')){const c=[...nbrs()[n]].filter(x=>!G.N[x].dead&&CAPR[x]!=null&&G.R.o[CAPR[x]]===x&&!allied(n,x)&&!isHuman(x)&&stats()[x].power<s.power*2.5);if(c.length){const x=c[Math.floor(rnd()*c.length)];opts.push({k:'cap',x,b:CAPR[x],t:`Verover de hoofdstad van ${natName(x)}`,rw:{m:+(inc*2.5).toFixed(2),jt:15}})}}
   while(N.ms.length<3&&opts.length){const i=Math.floor(rnd()*opts.length);N.ms.push(opts.splice(i,1)[0])}}
 function msProg(n,m){const s=stats()[n];
   if(m.k==='grow')return [s.km,m.b];if(m.k==='beat'){if(G.N[m.x].dead)return [natRegions[m.x].some(r=>G.R.o[r]===n)?1:-1,1];return [clamp(1-stats()[m.x].km/(KM0[m.x]||1),0,.99),1]}if(m.k==='cont')return [myConts(n).length,m.b];
@@ -1138,7 +1138,7 @@ function draw(){
   const ps=pickSet();
   if(ps){ctx.fillStyle='rgba(3,7,11,.62)';const f=focusN();for(const r of vis)if(!ps.has(G.R.o[r.i])&&G.R.o[r.i]!==f)ctx.fill(r.path,'evenodd')}
   for(const r of vis)if(r.tiny){ctx.beginPath();ctx.arc(r.lx,r.ly,Math.max(1.2,3/s),0,7);ctx.fillStyle=regCol[r.i];ctx.fill();ctx.lineWidth=1/s;ctx.strokeStyle='#000a';ctx.stroke()}
-  drawOcc(s,vx0,vy0,vx1,vy1);if(!G.pv)drawZones(s,vis,now);flashes=flashes.filter(f=>now-f.t0<f.d);
+  if(!G.pv&&!PICK)drawTerrain(s,vis);drawOcc(s,vx0,vy0,vx1,vy1);if(!G.pv)drawZones(s,vis,now);flashes=flashes.filter(f=>now-f.t0<f.d);
   for(const f of flashes){if(now<f.t0)continue;const k=(now-f.t0)/f.d;const a=(1-k)*(.5+.5*Math.sin(k*Math.PI*6));ctx.fillStyle=`rgba(${f.c},${a*.85})`;ctx.fill(R0[f.r].path,'evenodd')}
   ctx.lineJoin='round';ctx.lineCap='round';
   ctx.strokeStyle='rgba(170,220,245,.34)';ctx.lineWidth=.9/s;ctx.stroke(coastPath);
@@ -1189,6 +1189,15 @@ function drawPill(n,sd,tk,x,y,sub,rel,inline){
 const PATS={};function hatch(key,col,w,gap){if(PATS[key])return PATS[key];const c=document.createElement('canvas');c.width=c.height=gap;const g=c.getContext('2d');g.strokeStyle=col;g.lineWidth=w;g.lineCap='square';
   g.beginPath();g.moveTo(-2,gap+2);g.lineTo(gap+2,-2);g.moveTo(gap-2,gap+2);g.lineTo(gap+2,gap-2);g.moveTo(-2,2);g.lineTo(2,-2);g.stroke();return PATS[key]=ctx.createPattern(c,'repeat')}
 let ZONE_ANIM=false;
+// faint terrain textures: snow flecks, sand dots, jungle leaves, mountain chevrons
+const TPAT={};function terrPat(t){if(TPAT[t])return TPAT[t];const n=t==='mnt'?18:t==='jun'?12:14;const c=document.createElement('canvas');c.width=c.height=n;const g=c.getContext('2d');
+  if(t==='cold'){g.fillStyle='rgba(255,255,255,.55)';[[3,3],[10,8],[6,12]].forEach(([x,y])=>{g.beginPath();g.arc(x,y,1.1,0,7);g.fill()})}
+  else if(t==='des'){g.fillStyle='rgba(255,236,170,.6)';[[2,4],[9,2],[6,9],[12,12]].forEach(([x,y])=>g.fillRect(x,y,1.3,1.3))}
+  else if(t==='jun'){g.strokeStyle='rgba(20,60,20,.55)';g.lineWidth=1.3;g.beginPath();g.moveTo(2,9);g.quadraticCurveTo(4,4,8,3);g.moveTo(7,11);g.quadraticCurveTo(9,8,11,8);g.stroke()}
+  else if(t==='mnt'){g.strokeStyle='rgba(0,0,0,.4)';g.lineWidth=1.3;g.beginPath();g.moveTo(3,12);g.lineTo(7,6);g.lineTo(11,12);g.moveTo(10,16);g.lineTo(13,12);g.lineTo(16,16);g.stroke()}
+  return TPAT[t]=ctx.createPattern(c,'repeat')}
+function drawTerrain(s,vis){if(s<1.15)return;const m=new DOMMatrix([1/s,0,0,1/s,0,0]);ctx.globalAlpha=clamp((s-1.15)*.8,0,.75);
+  for(const t of ['cold','des','jun','mnt']){const p=terrPat(t);p.setTransform(m);ctx.fillStyle=p;for(const r of vis)if(TER[r.i]===t)ctx.fill(r.path,'evenodd')}ctx.globalAlpha=1}
 function drawZones(s,vis,now){ZONE_ANIM=false;const m=new DOMMatrix([1/s,0,0,1/s,0,0]);
   const fo=G.fo||{};let anyF=false;for(const k in fo){anyF=true;break}
   if(anyF){const p=hatch('fo','rgba(200,255,70,.7)',2.4,11);p.setTransform(m);const pulse=1;
