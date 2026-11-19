@@ -588,7 +588,12 @@ const ERA=window.ERA||null;
 (function(){const base=MAP.regions;const mk=base.map(r=>MAP.nations[r.n].k);base.forEach((r,i)=>r.mk=mk[i]);if(!ERA)return;
   const regs=base.map((r,i)=>{const o=Object.assign({},r,ERA.mod[i]||{});o.n=ERA.own[i];delete o.cap;return o});
   ERA.add.forEach(a=>regs.push(Object.assign({nm:base[a.b].nm,mk:mk[a.b],s:[],a:[]},a)));
-  ERA.caps.forEach(ri=>{if(ri>=0)regs[ri].cap=1});
+  // The era data sometimes puts a capital in the biggest area (Greenland for Denmark, Angola for Portugal). When a country
+  // holds the modern capital of the country it is named after, that city is its capital and its home continent.
+  const bn=MAP.nations.map(d=>(d.name||'').toLowerCase());
+  ERA.caps.forEach((ri,n)=>{const nm=((ERA.nations[n]||{}).name||'').toLowerCase();let best=ri>=0&&ri<base.length&&base[ri].cap?ri:-1;
+    if(best<0&&nm)for(let i=0;i<base.length;i++){if(!base[i].cap||regs[i].n!==n)continue;const b=bn[base[i].n];if(b.length>3&&nm.includes(b)){best=i;break}}
+    const c=best>=0?best:ri;if(c>=0)regs[c].cap=1;ERA.caps[n]=c});
   MAP.regions=regs;MAP.nations=ERA.nations})();
 /* ================= static data ================= */
 const NAT=MAP.nations,NN=NAT.length,REG=MAP.regions,NR=REG.length,WW=MAP.W,HH=MAP.H;
@@ -653,7 +658,16 @@ function frontTerrain(att,def,c){const fr=frontRegions(att,def,c);let w=0,d=0,sp
   if(!w)return {d:1,s:1,w:1,tk:1,h:1,main:null};let main=null,mv=0;for(const t in cnt)if(cnt[t]>mv){mv=cnt[t];main=t}if(mv<w*.34)main=null;
   return {d:d/w,s:sp/w,w:wl/w,tk:tk/w,h:h/w,main}}
 const CAPR=natRegions.map(rs=>{const c=rs.find(i=>R0[i].cap);return c==null?null:c});
-const CAPC=natRegions.map(rs=>{const c=rs.find(i=>R0[i].cap);return c!=null?CONT[c]:rs.length?CONT[rs[0]]:0});
+const CAPC=natRegions.map(rs=>{const c=rs.find(i=>R0[i].cap);if(c!=null)return CONT[c];if(!rs.length)return 0;
+  const w={};for(const i of rs)w[CONT[i]]=(w[CONT[i]]||0)+Math.sqrt(R0[i].km+500);return +Object.keys(w).sort((a,b)=>w[b]-w[a])[0]});
+// How a country spreads its army over the continents where it holds land: half by population, half by number of areas
+// (so a huge empty area such as Greenland does not pull the army away), the home continent gets the most and every
+// other continent with land keeps at least a small garrison (4%).
+function contShare(n,cap,pc,rc){const pt=pc.reduce((a,b)=>a+b,0),rt=rc.reduce((a,b)=>a+b,0),f=new Array(NC).fill(0);if(!rt)return f;
+  for(let c=0;c<NC;c++)if(rc[c]){const x=.5*(pt>0?pc[c]/pt:0)+.5*rc[c]/rt;f[c]=c===cap?.5+.5*x:.5*x}
+  if(!rc[cap]){const t=f.reduce((a,b)=>a+b,0);return f.map(v=>v/t)}
+  for(let c=0;c<NC;c++)if(rc[c]&&c!==cap&&f[c]<.04){f[cap]-=.04-f[c];f[c]=.04}
+  return f}
 R0.forEach(r=>{const el={};for(const {e} of r.rings)for(let j=0;j<e.length;j+=2)if(e[j]>=0)el[e[j]]=(el[e[j]]||0)+e[j+1];r.el=el});
 const P0=new Array(NR),G0=new Array(NR);
 for(let n=0;n<NN;n++){const rs=natRegions[n];if(!rs.length)continue;const d=NAT[n];
@@ -929,8 +943,8 @@ function initialState(o){
     const cst=natRegions[n].some(i=>R0[i].coast);
     const k={tk:Math.round(d.mil*1.2+Math.sqrt(d.bud)*20),jt:Math.round(Math.sqrt(d.bud)*8+d.bud*1.2),sh:cst?Math.round(d.bud*.12+Math.sqrt(d.bud)*1.5):0,bm:Math.round(d.bud*.5+5)};
     const t=Math.max(200,Math.round(d.mil*1000)),a=new Array(NC).fill(0),ka=new Array(NC).fill(0);
-    const pc=new Array(NC).fill(0);let pt=0;natRegions[n].forEach(i=>{pc[CONT[i]]+=R.p[i];pt+=R.p[i]});
-    if(pt>0){for(let c=0;c<NC;c++){const f=c===CAPC[n]?.5+.5*pc[c]/pt:.5*pc[c]/pt;a[c]=Math.round(t*f);ka[c]=Math.round(k.tk*f)}}else{a[CAPC[n]]=t;ka[CAPC[n]]=k.tk}
+    const pc=new Array(NC).fill(0),rc=new Array(NC).fill(0);natRegions[n].forEach(i=>{pc[CONT[i]]+=R.p[i];rc[CONT[i]]++});
+    if(natRegions[n].length){const sh=contShare(n,CAPC[n],pc,rc);for(let c=0;c<NC;c++){a[c]=Math.round(t*sh[c]);ka[c]=Math.round(k.tk*sh[c])}}else{a[CAPC[n]]=t;ka[CAPC[n]]=k.tk}
     k.tk=ka.reduce((x,y)=>x+y,0);if(ET&&!unitOK('jt'))k.jt=0;if(ET&&!unitOK('sh'))k.sh=0;const nu=ERA?(ERA.nukes||[]).find(x=>x[0]===n)?.slice(1):NUKES[d.k];k.nk=nu?nu[0]:0;if(nu){u[U.kp]=nu[1];u[U.rs]=nu[2]}
     const rd=ERA?((ERA.res0||[]).find(x=>x[0]===n)||[]).slice(1).filter(resOK):RES0[d.k]||[];const done={};rd.forEach(id=>done[id]=1);Object.assign(k,{dr:done.dr?Math.round(d.bud*.6+10):0,kr:done.kr?Math.round(d.bud*.08+4):0,bb:0,emp:0});
     return {m:+(d.bud*.6+d.gdp*.01).toFixed(3),t:a.reduce((x,y)=>x+y,0),a,ka,u,k,rs:{done,cur:null},hit:0,dead:natRegions[n].length?0:1}});
@@ -1822,7 +1836,7 @@ function aiResearch(){for(let n=0;n<NN;n++){const N=G.N[n];if(N.dead||isHuman(n)
 function startTurn(n){
   const st=stats()[n];const N=G.N[n];N.m+=st.inc-st.upk;
   if(N.m<0){scaleA(n,.92);N.m=0;if(isHuman(n))addLog($b(`${natName(n)} kan het leger niet betalen: een deel deserteert.`,`${natName(n)} cannot pay its army: part of it deserts.`),[n],'info')}
-  STATS=null;let got=reinfAmount(n);if(!isHuman(n)&&dip().war[n].size&&lossFrac(n)>.08&&(N.we||0)<50){got=Math.round(got*(1.35-(N.we||0)/150));}A(n);const sp=stats()[n];if(sp.pop>0)for(let c=0;c<NC;c++){if(sp.cr[c])N.a[c]+=Math.round(got*sp.cp[c]/sp.pop)}else N.a[homeCont(n)]+=got;fixA(n);N.bt={};
+  STATS=null;let got=reinfAmount(n);if(!isHuman(n)&&dip().war[n].size&&lossFrac(n)>.08&&(N.we||0)<50){got=Math.round(got*(1.35-(N.we||0)/150));}A(n);const sp=stats()[n];if(sp.regs>0){const sh=contShare(n,homeCont(n),sp.cp,sp.cr);for(let c=0;c<NC;c++)if(sp.cr[c])N.a[c]+=Math.round(got*sh[c])}else N.a[homeCont(n)]+=got;fixA(n);N.bt={};
   if(isHuman(n)){N.lastR=got;const rk=rankOf(n);if(rk>(N.rk||0)){addLog($b(`${natName(n)} is nu een ${RANKS[rk].nl}!`,`${natName(n)} reaches rank ${RANKS[rk].en}!`),[n],'ally');N.rkUp=rk}N.rk=Math.max(N.rk||0,rk);N.ap=apMax(n);N.acted=0;N.pk=Math.max(N.pk||0,stats()[n].km);N.ev=rollEvent(n);msGen(n);resTick(n)}
 }
 function aiBuyUnits(n,budget){
@@ -1845,14 +1859,16 @@ function aiBuyUnits(n,budget){
   // leftovers from rounding go to the best fitting units
   for(const id of ids){const u=UI[id];const rest=pool-(m0-N.m);const packs=Math.floor(rest/u.c);if(packs>=1)buyUnit(n,id,Math.min(packs,Math.ceil(unitLeft(n,id)/u.pack)))}
 }
-// AI: keep the land army spread over its continents by population, with extra troops where the enemies are.
+// AI: keep the land army spread over every continent where it holds land (see contShare), with extra troops where the enemies are.
 function aiArmy(n){const N=A(n),s=stats()[n];const cs=myConts(n);if(!cs.length)return;const h=homeCont(n);
   for(let c=0;c<NC;c++)if(!s.cr[c]&&(N.a[c]||N.ka[c])){N.a[h]+=N.a[c];N.ka[h]+=N.ka[c];N.a[c]=0;N.ka[c]=0}
   if(cs.length>1){const thr=new Array(NC).fill(0);let tt=0;const foesA=[...dip().war[n]];if(G.N[n].pl&&!G.N[G.N[n].pl.t].dead&&!foesA.includes(G.N[n].pl.t))foesA.push(G.N[n].pl.t);const war=foesA.length>0;for(const e of foesA){const EA=A(e),se=stats()[e];for(const c of cs)if(se.cr[c]){const v=EA.a[c]+EA.ka[c]*TK_D;thr[c]+=v;tt+=v}}
     if(!war){const S=stats();for(let r=0;r<NR;r++){if(G.R.o[r]!==n)continue;const c=CONT[r],el=R0[r].el;for(const k in el){const p=G.R.o[+k];if(p===n||G.N[p].dead||allied(n,p))continue;const v=S[p].power*el[k];thr[c]+=v;tt+=v}}}
     const kb=war?.5:.65;
-    const pp=s.pop||1,tot=N.a.reduce((x,y)=>x+y,0),totk=N.ka.reduce((x,y)=>x+y,0);
-    for(const c of cs){const w=(1-kb)*s.cp[c]/pp+(tt?kb*thr[c]/tt:kb*s.cp[c]/pp);N.a[c]=Math.round(N.a[c]+(tot*w-N.a[c])*.4);N.ka[c]=Math.round(N.ka[c]+(totk*w-N.ka[c])*.4)}}
+    const base=contShare(n,h,s.cp,s.cr),tot=N.a.reduce((x,y)=>x+y,0),totk=N.ka.reduce((x,y)=>x+y,0);
+    // never strip a continent: the home continent keeps at least 30%, every other one at least 4%
+    const w=new Array(NC).fill(0);let ws=0;for(const c of cs){w[c]=Math.max(c===h?.3:.04,(1-kb)*base[c]+(tt?kb*thr[c]/tt:kb*base[c]));ws+=w[c]}
+    for(const c of cs){const f=w[c]/ws;N.a[c]=Math.round(N.a[c]+(tot*f-N.a[c])*.4);N.ka[c]=Math.round(N.ka[c]+(totk*f-N.ka[c])*.4)}}
   fixA(n)}
 function aiTurn(n){
   const N=G.N[n];if(N.dead)return;const enemies=[...dip().war[n]];const K=kit(n);aiArmy(n);
@@ -2068,7 +2084,7 @@ function draw(){
     const nm=natName(L.n).replace(/\s*\([^)]*\)/g,'').toUpperCase();const fs=clamp(w/Math.max(6,nm.length)*1.3,11,important?28:22);const x=L.x*s+cam.x,y=L.y*s+cam.y;if(x<-200||x>VW+200||y<-50||y>VH+50)continue;
     const showT=!G.pv&&(important||s>3);
     // pick screen: the army each country really starts with, in a marker above its name (pickable ones and the one you tapped)
-    const pkT=G.pv&&PICK&&ps&&important?(ps.has(L.n)?pickStart(L.n,PICK.diff,PICK.opts.hist!==false):{t:G.N[L.n].t,tk:kit(L.n).tk,jt:kit(L.n).jt||0}):null;
+    const pkT=G.pv&&PICK&&ps&&important?(ps.has(L.n)?pickStart(L.n,PICK.diff,PICK.opts.hist!==false):{t:A(L.n).a[L.c],tk:A(L.n).ka[L.c],jt:kit(L.n).jt||0}):null;
     const NF=`700 ${fs}px "Barlow Condensed","Arial Narrow",sans-serif`,LS=(fs*.05).toFixed(1)+'px';ctx.font=NF;ctx.letterSpacing=LS;const tw=ctx.measureText(nm).width;
     let sd=0,tk=0,jt=0,multi=false;if(showT){const N=A(L.n);multi=N.a.filter((v,c)=>c!==L.c&&(v>0||N.ka[c]>0)).length>0||armyLabels.some(q=>q.n===L.n);sd=multi?N.a[L.c]:N.t;tk=multi?N.ka[L.c]:kit(L.n).tk;jt=kit(L.n).jt||0}
     const z=pillZ(s),lv=pillLvl(w,relW(L.n));const pb=showT?pillBox(sd,tk,jt,x,y+fs*.55,false,lv,z):null;
@@ -2306,7 +2322,7 @@ function sfx(k){if(!SND.on)return;try{if(!SND.ac)SND.ac=new (window.AudioContext
 /* ================= in-game UI ================= */
 function onTap(x,y){
   if(!G||BATTLE)return;const r=regionAt(x,y);
-  if(PICK){if(r<0)return;const n=G.R.o[r];const ps=pickSet();if(!ps){toast($t('Kies eerst een moeilijkheid','Pick a difficulty first'));return}PICK.peek=n;req();if(!ps.has(n)){toast($t(`${esc(baseName(NAT[n]))} (${fmtT(G.N[n].t)} soldaten) kun je niet kiezen in ${MODES[PICK.diff].nm}. Kies een land met een witte rand.`,`${esc(baseName(NAT[n]))} (${fmtT(G.N[n].t)} soldiers) cannot be picked in ${MODES[PICK.diff].nm}. Pick a country with a white outline.`));return}PICK.cur=n;bordersDirty=true;renderPick();req();return}
+  if(PICK){if(r<0)return;const n=G.R.o[r];const ps=pickSet();if(!ps){toast($t('Kies eerst een moeilijkheid','Pick a difficulty first'));return}PICK.peek=n;req();if(!ps.has(n)){toast($t(`${esc(baseName(NAT[n]))} (${fmtT(A(n).a[CONT[r]])} soldaten in ${CONTS[CONT[r]]}) kun je niet kiezen in ${MODES[PICK.diff].nm}. Kies een land met een witte rand.`,`${esc(baseName(NAT[n]))} (${fmtT(A(n).a[CONT[r]])} soldiers in ${CONTS[CONT[r]]}) cannot be picked in ${MODES[PICK.diff].nm}. Pick a country with a white outline.`));return}PICK.cur=n;bordersDirty=true;renderPick();req();return}
   if(G.pv)return;
   hudClose();
   {const a=SELARR.find(a=>Math.hypot(a.x-x,a.y-y)<22);if(a){flyTo(a.wx,a.wy,Math.max(cam.s,3));return}}
@@ -2346,10 +2362,11 @@ function renderPanel(){
   const P=$('#panel');if(NUKE_T||selN<0||!G||G.pv||G.N[selN].dead){P.classList.remove('open');$('#app').classList.remove('pnl');updateHint();return}
   const o=selN,st=stats()[o];const can=myTurn();const [rc,rl]=relOf(o);const ap=apLeft();
     let h=`<div class="ph"><span class="fl">${natFlag(o)}</span><div style="min-width:0"><h2>${esc(natName(o))}</h2><div class="own"><span class="rel ${rc}">${rl}</span>${G.hum[o]&&o!==ME?$t('speler ','player ')+esc(G.hum[o].nick):''}</div></div><button class="x" id="pClose" aria-label="${$t('Sluiten','Close')}">${svgI('close')}</button></div><div class="pb">`;
-  h+=`<div class="grid2"><div class="kv"><small>${$t('Soldaten','Soldiers')}</small><b class="num">${fmtT(st.troops)}</b></div><div class="kv"><small>${$t('Inwoners','Population')}</small><b class="num">${fmtPop(st.pop)}</b></div><div class="kv"><small>${$t('Grootte','Size')}</small><b class="num">${fmtKm(st.km)}</b></div><div class="kv"><small>${$t('Economie','Economy')}</small><b class="num">${fmtMoney(st.gdp)}</b></div></div>`+kitChips(o);
+  h+=`<div class="grid2"><div class="kv"><small>${$t('Soldaten (totaal)','Soldiers (total)')}</small><b class="num">${fmtT(st.troops)}</b></div><div class="kv"><small>${$t('Inwoners','Population')}</small><b class="num">${fmtPop(st.pop)}</b></div><div class="kv"><small>${$t('Grootte','Size')}</small><b class="num">${fmtKm(st.km)}</b></div><div class="kv"><small>${$t('Economie','Economy')}</small><b class="num">${fmtMoney(st.gdp)}</b></div></div>`+kitChips(o);
   {const cs=natComps(o);if(cs.length>1){const far=cs.filter(c=>c.km>=200).length;h+=`<div class="selhint note"><span>${$t(`${esc(natName(o))} heeft land op ${far>1?far:cs.length} plekken, blauw gemarkeerd op de kaart.`,`${esc(natName(o))} has land in ${far>1?far:cs.length} places, marked in blue on the map.`)}</span><button class="chip" id="selAll">${$t('Toon al het land','Show all land')}</button></div>`}}
   {const tc={};let tt=0;for(let r=0;r<NR;r++)if(G.R.o[r]===o){tt+=R0[r].km;if(TER[r])tc[TER[r]]=(tc[TER[r]]||0)+R0[r].km}
     const tl=Object.keys(tc).filter(t=>tc[t]>tt*.15).sort((a,b)=>tc[b]-tc[a]);if(tl.length)h+=`<div class="note terr">${$t('Terrein','Terrain')}: ${tl.map(t=>`${svgI(TERR[t].ic)} ${TERR[t].nm.toLowerCase()} (${Math.round(tc[t]/tt*100)}%)`).join(', ')}. ${$t('Moeilijker te veroveren.','Harder to conquer.')}</div>`}
+  if(o!==ME){const NA=A(o),cs=myConts(o);if(cs.length>1)h+=`<div class="lbl li">${svgI('globe')}${$t('Leger per continent','Army per continent')}</div><div class="dlist">${cs.map(c=>`<div class="drow"${c===selC?' style="color:var(--ink);font-weight:700"':''}><span>${CONTS[c]}</span><span class="r num" style="margin-left:auto">${fmtT(NA.a[c])} ${$t('soldaten','soldiers')} · ${fmtN(NA.ka[c])} tanks</span></div>`).join('')}</div><div class="note">${$t('Alleen het leger op een continent verdedigt het land daar.','Only the army on a continent defends the land there.')}</div>`}
   if(G.N[o].last)h+=`<div class="warn">${$t(`${esc(natName(o))} vecht tot het bittere einde: +30% verdediging.`,`${esc(natName(o))} fights to the bitter end: +30% defence.`)}</div>`;
   if(o!==ME)h+=relBlock(o);
   if(o!==ME&&((kit(o).nk||0)>0||ul(o,'rs')))h+=`<div class="nukeinfo">${svgI('rad')}<span>${kit(o).nk?`<b>${$t('Kernmacht','Nuclear power')}:</b> ${fmtN(kit(o).nk)} ${$t('kernbommen','nuclear bombs')}`:$t('Geen kernbommen','No nuclear bombs')}${ul(o,'rs')?` · ${$t('raketschild niveau','missile shield level')} ${ul(o,'rs')}`:''}</span></div>`;
@@ -2999,6 +3016,9 @@ function startPick(mode){
   PICK={mode,players:[],cur:-1,diff:-1,opts:{maxR:36,tl:90,hist:true}};setMode('pick');resize();cam.s=minS();cam.x=-(WW*cam.s-VW)/2;clampCam();renderPick();req();
 }
 // What a player's country really starts with in an era (after the fair start), for the pick screen.
+// The army of o that n would actually meet: the one on the continent(s) where they fight, not o's army all over the world.
+function armyVs(o,n){const A0=A(o);let cs=theaters(n,o);if(!cs.length){const mine=new Set(natRegions[n].map(i=>CONT[i]));cs=myConts(o).filter(c=>mine.has(c))}
+  if(!cs.length)cs=[homeCont(o)];let b=cs[0];for(const c of cs)if(A0.a[c]>A0.a[b])b=c;return {t:A0.a[b],tk:A0.ka[b],c:b}}
 const PICKST={};function pickStart(n,d,hist){const k=n+'|'+d+'|'+hist;if(PICKST[k])return PICKST[k];const g0=G,S=initialState({mode:'pv',humans:[{nick:'',nation:n}],maxR:0,diff:d,hist});G=g0;dirty();DIP=null;
   const N=S.N[n];return PICKST[k]={t:N.t,tk:N.k.tk,jt:N.k.jt}}
 function renderPick(){
@@ -3013,14 +3033,14 @@ function renderPick(){
     else h+=`<div class="lbl">${$t('Modus:','Mode:')} ${M.nm}</div>`;
     h+=countryBtns(M.ids,n,taken);
     if(n>=0){const d=NAT[n];
-      const nb=new Set();for(const r of natRegions[n])for(const j of R0[r].nb)if(R0[j].n0!==n)nb.add(R0[j].n0);const big=[...nb].sort((a,b)=>NAT[b].mil-NAT[a].mil)[0];
+      const nb=new Set();for(const r of natRegions[n])for(const j of R0[r].nb)if(R0[j].n0!==n)nb.add(R0[j].n0);const nbv={};for(const x of nb)nbv[x]=natRegions[x].length?armyVs(x,n).t:0;const big=[...nb].sort((a,b)=>nbv[b]-nbv[a])[0];
       const ST=M.st||pickStart(n,P.diff,P.opts.hist!==false);
       const wrs=ERA&&P.opts.hist!==false&&dip().war[n].size?[...dip().war[n]].slice(0,5):[];
       h+=`<div class="grid2"><div class="kv"><small>${$t('Soldaten bij de start','Soldiers at start')}</small><b>${fmtT(ST.t)}</b></div><div class="kv"><small>${$t('Inwoners','Population')}</small><b>${fmtPop(d.pop)}</b></div></div>
-       <div class="note">${M.st?$t(`In ${esc(M.nm.toLowerCase())} begint elk land even sterk: ${fmtT(ST.t)} soldaten, ${ST.tk} tanks en ${ST.jt} vliegtuigen.`,`On ${esc(M.nm.toLowerCase())} every country starts equally strong: ${fmtT(ST.t)} soldiers, ${ST.tk} tanks and ${ST.jt} jets.`):$t(`${esc(baseName(d))} begint met ${fmtT(ST.t)} soldaten${unitOK('tk')?`, ${fmtN(ST.tk)} tanks`:''}${unitOK('jt')?` en ${fmtN(ST.jt)} vliegtuigen`:''}.${wrs.length?` In oorlog met ${wrs.map(x=>`<b style="color:var(--amber)">${esc(baseName(NAT[x]))}</b>`).join(', ')}.`:''}`,`${esc(baseName(d))} starts with ${fmtT(ST.t)} soldiers${unitOK('tk')?`, ${fmtN(ST.tk)} tanks`:''}${unitOK('jt')?` and ${fmtN(ST.jt)} jets`:''}.${wrs.length?` At war with ${wrs.map(x=>`<b style="color:var(--amber)">${esc(baseName(NAT[x]))}</b>`).join(', ')}.`:''}`)}${big!=null?$t(` Sterkste buur: <b style="color:var(--ink)">${esc(baseName(NAT[big]))}</b> (${fmtT(NAT[big].mil*1000)} soldaten).`,` Strongest neighbour: <b style="color:var(--ink)">${esc(baseName(NAT[big]))}</b> (${fmtT(NAT[big].mil*1000)} soldiers).`):''}</div>`;
+       <div class="note">${M.st?$t(`In ${esc(M.nm.toLowerCase())} begint elk land even sterk: ${fmtT(ST.t)} soldaten, ${ST.tk} tanks en ${ST.jt} vliegtuigen.`,`On ${esc(M.nm.toLowerCase())} every country starts equally strong: ${fmtT(ST.t)} soldiers, ${ST.tk} tanks and ${ST.jt} jets.`):$t(`${esc(baseName(d))} begint met ${fmtT(ST.t)} soldaten${unitOK('tk')?`, ${fmtN(ST.tk)} tanks`:''}${unitOK('jt')?` en ${fmtN(ST.jt)} vliegtuigen`:''}.${wrs.length?` In oorlog met ${wrs.map(x=>`<b style="color:var(--amber)">${esc(baseName(NAT[x]))}</b>`).join(', ')}.`:''}`,`${esc(baseName(d))} starts with ${fmtT(ST.t)} soldiers${unitOK('tk')?`, ${fmtN(ST.tk)} tanks`:''}${unitOK('jt')?` and ${fmtN(ST.jt)} jets`:''}.${wrs.length?` At war with ${wrs.map(x=>`<b style="color:var(--amber)">${esc(baseName(NAT[x]))}</b>`).join(', ')}.`:''}`)}${big!=null?$t(` Sterkste buur: <b style="color:var(--ink)">${esc(baseName(NAT[big]))}</b> (${fmtT(nbv[big])} soldaten).`,` Strongest neighbour: <b style="color:var(--ink)">${esc(baseName(NAT[big]))}</b> (${fmtT(nbv[big])} soldiers).`):''}</div>`;
       {const ma=G.N[n].u[U.ma];G.N[n].u[U.ma]=natRegions[n].some(i=>R0[i].coast)?1:0;const rs=[];for(let o=0;o<NN;o++)if(o!==n&&!G.N[o].dead&&canReach(n,o))rs.push(o);G.N[n].u[U.ma]=ma;
-       rs.sort((a,b)=>G.N[a].t-G.N[b].t);const weak=rs.filter(o=>G.N[o].t<ST.t*1.2);
-       h+=`<div class="note">${$t('Meteen aan te vallen','Can be attacked right away')}: ${rs.slice(0,6).map(o=>`<b style="color:${G.N[o].t<ST.t*1.2?'var(--green)':'var(--ink)'}">${esc(baseName(NAT[o]))}</b> (${fmtT(G.N[o].t)})`).join(', ')}${rs.length>6?$t(` en nog ${rs.length-6}`,` and ${rs.length-6} more`):''}.</div>`;
+       const av={};for(const o of rs)av[o]=armyVs(o,n).t;rs.sort((a,b)=>av[a]-av[b]);const weak=rs.filter(o=>av[o]<ST.t*1.2);
+       h+=`<div class="note">${$t('Meteen aan te vallen (leger op dat front)','Can be attacked right away (army on that front)')}: ${rs.slice(0,6).map(o=>`<b style="color:${av[o]<ST.t*1.2?'var(--green)':'var(--ink)'}">${esc(baseName(NAT[o]))}</b> (${fmtT(av[o])})`).join(', ')}${rs.length>6?$t(` en nog ${rs.length-6}`,` and ${rs.length-6} more`):''}.</div>`;
        if(!weak.length)h+=`<div class="warn">${$t('Alle buren zijn veel sterker. Bouw eerst je economie','All neighbours are much stronger. Build your economy first')}${natRegions[n].some(i=>R0[i].coast)?$t(' en Marine (om over zee aan te vallen)',' and Navy (to attack across the sea)'):''}${$t(' op, en zoek bondgenoten.',', and look for allies.')}</div>`}
       if(P.mode==='local')h+=`<input type="text" id="pkNick" maxlength="16" placeholder="${$t('Naam speler','Player name')} ${P.players.length+1}" aria-label="${$t('Naam speler','Player name')}">`;
       h+=`<button class="btn pri big wide" id="pkGo" ${taken.has(n)?'disabled':''}>${svgI('play')} ${P.mode==='solo'?$t('Speel met ','Play as ')+esc(baseName(d)):$t('Kies ','Pick ')+esc(baseName(d))}</button>`}
