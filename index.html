@@ -909,7 +909,7 @@ let NET={db:null,user:null,uid:null,code:null,unsubG:null,unsubP:null,players:[]
 const pk=(a,b)=>a<b?a+'-'+b:b+'-'+a;
 // Fair start for a player's country: when a much bigger army lives next door the country gets a bonus that grows with the
 // gap (from 4x to about 80x), capped at +20% on easy, +35% on medium and +50% on hard so it never turns into a free win.
-// In an era (real armies) a tiny country also gets a small minimum army.
+// In an era the equal start (eraEqualize) comes first and this bonus is only a quarter as big.
 function startBoost(n,own,t0,d){
   const nb=new Set();for(const r of natRegions[n])for(const j of R0[r].nb)if(R0[j].n0!==n)nb.add(R0[j].n0);
   const ts=[...nb].filter(x=>natRegions[x].length).map(x=>t0[x]).sort((a,b)=>b-a);
@@ -937,7 +937,7 @@ function initialState(o){
   const order=[],hum={};
   const ST=MODES[o.diff??1].st;const t0=N.map(x=>x.t),dd=clamp(o.diff??1,0,2);
   o.humans.forEach((h,k)=>{order.push(h.nation);hum[h.nation]={nick:h.nick,uid:h.uid||null};const Nn=N[h.nation];Nn.h=1;Nn.col=h.color||PALETTE[k%PALETTE.length];Nn.seen=0;Nn.rk=0;
-    if(!ST){Nn.rep=0;eraEqualize(h.nation,Nn,N,dd);const B=startBoost(h.nation,Nn.t,t0,dd);boostNation(Nn,B.f,B.fl);Nn.t0=Nn.t;return}
+    if(!ST){Nn.rep=0;eraEqualize(h.nation,Nn,N,dd);const B=startBoost(h.nation,Nn.t,t0,dd);boostNation(Nn,1+(B.f-1)*.25,0);Nn.t0=Nn.t;return}
     // same start for every country on this difficulty: army and tanks spread like before, but scaled to the same total
     const d=NAT[h.nation],cst=natRegions[h.nation].some(i=>R0[i].coast);const ft=ST.t/Math.max(1,Nn.t),fk=ST.tk/Math.max(1,Nn.k.tk);
     if(Nn.t>0){Nn.a=Nn.a.map(v=>Math.round(v*ft));Nn.ka=Nn.ka.map(v=>Math.round(v*fk))}else{Nn.a[CAPC[h.nation]]=ST.t;Nn.ka[CAPC[h.nation]]=ST.tk}
@@ -965,14 +965,14 @@ function initialState(o){
 function eraEqualize(n,Nn,N,dd){
   const pool=(MODES[dd].ePool||[]).filter(i=>natRegions[i]&&natRegions[i].length);if(!pool.length)return;
   const med=f=>{const v=pool.map(f).sort((a,b)=>a-b);return v[Math.floor(v.length/2)]||0};
-  const [lo,hi]=dd===0?[.6,1.7]:[.7,1.4];
+  const [lo,hi]=[.92,1.1];   // tight: two players on one difficulty never start far apart
   const cmp=(v,ref)=>ref>0?clamp(Math.pow(Math.max(v,ref*.01),.3)*Math.pow(ref,.7),ref*lo,ref*hi):v;
   const d=NAT[n],K=Nn.k;
-  // never so small that the strongest neighbour (over land or a short sea crossing) is hopeless: at least 50% / 35% / 22% of its army
+  // a strong neighbour (over land or a short sea crossing) gives a little extra army, at most +15%, so the start stays fair between players
   const nb=new Set();for(const r of natRegions[n])for(const j of R0[r].nb)if(R0[j].n0!==n)nb.add(R0[j].n0);
   for(const r of natRegions[n]){if(!R0[r].coast)continue;for(const x of COAST)if(R0[x].n0!==n&&dist(r,x)<40)nb.add(R0[x].n0)}
   let big=0;for(const x of nb)if(natRegions[x]&&natRegions[x].length)big=Math.max(big,N[x].t);
-  const tR=med(i=>N[i].t),t=Math.max(cmp(Nn.t,tR),big*[.5,.35,.22][dd]),raise=Math.max(1,t/Math.max(1,cmp(Nn.t,tR)));
+  const tR=med(i=>N[i].t),t0=cmp(Nn.t,tR),t=Math.max(t0,Math.min(t0*1.15,big*[.5,.35,.22][dd])),raise=Math.max(1,t/Math.max(1,t0));
   if(Nn.t>0){const f=t/Nn.t;Nn.a=Nn.a.map(v=>Math.round(v*f))}else Nn.a[CAPC[n]]=Math.round(t);
   const tkR=med(i=>N[i].k.tk),tk=Math.round(cmp(K.tk,tkR)*raise);const st=K.tk;
   if(st>0){Nn.ka=Nn.ka.map(v=>Math.round(v*tk/st))}else Nn.ka[CAPC[n]]=tk;
@@ -2064,15 +2064,19 @@ function draw(){
     const box=pillBox(N.a[L.c],N.ka[L.c],0,x,y-9,true,lv,z);if(rw!==1&&ov(box))continue;placed.push(box);drawPill(L.n,N.a[L.c],N.ka[L.c],0,x,y-9,CONTS[L.c],rw,false,lv,z)}};
   armyPass(true);
   const pri=L=>L.n===selN?0:L.n===f?1:isHuman(L.n)?2:(!G.pv&&f>=0&&atWar(f,L.n))?3:4;const LBL=selN>=0||f>=0?[...natLabels].sort((a,b)=>pri(a)-pri(b)):natLabels;
-  for(const L of LBL){const w=L.w*s;const important=L.n===f||L.n===selN||isHuman(L.n)||(ps&&ps.has(L.n))||(!G.pv&&f>=0&&atWar(f,L.n))||(BATTLE&&(L.n===BATTLE.def));if(w<60&&!(important&&w>8))continue;if(ps&&!important)continue;
+  for(const L of LBL){const w=L.w*s;const important=L.n===f||L.n===selN||isHuman(L.n)||(ps&&ps.has(L.n))||(PICK&&L.n===PICK.peek)||(!G.pv&&f>=0&&atWar(f,L.n))||(BATTLE&&(L.n===BATTLE.def));if(w<60&&!(important&&w>8))continue;if(ps&&!important)continue;
     const nm=natName(L.n).replace(/\s*\([^)]*\)/g,'').toUpperCase();const fs=clamp(w/Math.max(6,nm.length)*1.3,11,important?28:22);const x=L.x*s+cam.x,y=L.y*s+cam.y;if(x<-200||x>VW+200||y<-50||y>VH+50)continue;
     const showT=!G.pv&&(important||s>3);
+    // pick screen: the army each country really starts with, in a marker above its name (pickable ones and the one you tapped)
+    const pkT=G.pv&&PICK&&ps&&important?(ps.has(L.n)?pickStart(L.n,PICK.diff,PICK.opts.hist!==false):{t:G.N[L.n].t,tk:kit(L.n).tk,jt:kit(L.n).jt||0}):null;
     const NF=`700 ${fs}px "Barlow Condensed","Arial Narrow",sans-serif`,LS=(fs*.05).toFixed(1)+'px';ctx.font=NF;ctx.letterSpacing=LS;const tw=ctx.measureText(nm).width;
     let sd=0,tk=0,jt=0,multi=false;if(showT){const N=A(L.n);multi=N.a.filter((v,c)=>c!==L.c&&(v>0||N.ka[c]>0)).length>0||armyLabels.some(q=>q.n===L.n);sd=multi?N.a[L.c]:N.t;tk=multi?N.ka[L.c]:kit(L.n).tk;jt=kit(L.n).jt||0}
     const z=pillZ(s),lv=pillLvl(w,relW(L.n));const pb=showT?pillBox(sd,tk,jt,x,y+fs*.55,false,lv,z):null;
-    const box=[Math.min(x-tw/2-4,pb?pb[0]:1e9),y-fs/2,Math.max(x+tw/2+4,pb?pb[2]:-1e9),(showT?y+fs*.55+Math.ceil(PILL_H*z)+3:y+fs/2)];if(ov(box))continue;placed.push(box);
+    const pz=pillZ(s),pkY=y-fs*.6-(PILL_H+2)*pz,pkb=pkT?pillBox(pkT.t,pkT.tk,pkT.jt,x,pkY,false,2,pz):null;
+    const box=[Math.min(x-tw/2-4,pb?pb[0]:1e9,pkb?pkb[0]:1e9),pkb?pkb[1]:y-fs/2,Math.max(x+tw/2+4,pb?pb[2]:-1e9,pkb?pkb[2]:-1e9),(showT?y+fs*.55+Math.ceil(PILL_H*z)+3:y+fs/2)];if(ov(box))continue;placed.push(box);
     ctx.font=NF;ctx.letterSpacing=LS;ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.55)';ctx.fillStyle=important?'#fff':'rgba(235,240,244,.75)';ctx.strokeText(nm,x,y);ctx.fillText(nm,x,y);
-    if(showT)drawPill(L.n,sd,tk,jt,x,y+fs*.55,multi?CONTS[L.c]:null,relW(L.n),true,lv,z)}
+    if(showT)drawPill(L.n,sd,tk,jt,x,y+fs*.55,multi?CONTS[L.c]:null,relW(L.n),true,lv,z);
+    if(pkT)drawPill(L.n,pkT.t,pkT.tk,pkT.jt,x,pkY,null,L.n===PICK.cur?1:0,true,2,pz)}
   ctx.letterSpacing='0px';armyPass(false);
   if(!G.pv)drawCaps(s,vx0,vy0,vx1,vy1);
   drawSel(s,now);
@@ -2302,7 +2306,7 @@ function sfx(k){if(!SND.on)return;try{if(!SND.ac)SND.ac=new (window.AudioContext
 /* ================= in-game UI ================= */
 function onTap(x,y){
   if(!G||BATTLE)return;const r=regionAt(x,y);
-  if(PICK){if(r<0)return;const n=G.R.o[r];const ps=pickSet();if(!ps){toast($t('Kies eerst een moeilijkheid','Pick a difficulty first'));return}if(!ps.has(n)){toast($t(`${esc(baseName(NAT[n]))} kun je niet kiezen in ${MODES[PICK.diff].nm}. Kies een land met een witte rand.`,`You cannot pick ${esc(baseName(NAT[n]))} in ${MODES[PICK.diff].nm}. Pick a country with a white outline.`));return}PICK.cur=n;bordersDirty=true;renderPick();req();return}
+  if(PICK){if(r<0)return;const n=G.R.o[r];const ps=pickSet();if(!ps){toast($t('Kies eerst een moeilijkheid','Pick a difficulty first'));return}PICK.peek=n;req();if(!ps.has(n)){toast($t(`${esc(baseName(NAT[n]))} (${fmtT(G.N[n].t)} soldaten) kun je niet kiezen in ${MODES[PICK.diff].nm}. Kies een land met een witte rand.`,`${esc(baseName(NAT[n]))} (${fmtT(G.N[n].t)} soldiers) cannot be picked in ${MODES[PICK.diff].nm}. Pick a country with a white outline.`));return}PICK.cur=n;bordersDirty=true;renderPick();req();return}
   if(G.pv)return;
   hudClose();
   {const a=SELARR.find(a=>Math.hypot(a.x-x,a.y-y)<22);if(a){flyTo(a.wx,a.wy,Math.max(cam.s,3));return}}
