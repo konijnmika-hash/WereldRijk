@@ -1005,20 +1005,6 @@ const TRADE0=[['United States of America','Mexico'],['Canada','Mexico'],['China'
 let G=null,ME=-1,PICK=null;
 let NET={db:null,user:null,uid:null,code:null,unsubG:null,unsubP:null,players:[],game:null,writing:false,pending:false};
 const pk=(a,b)=>a<b?a+'-'+b:b+'-'+a;
-// Fair start for a player's country: when a much bigger army lives next door the country gets a bonus that grows with the
-// gap (from 4x to about 80x), capped at +20% on easy, +35% on medium and +50% on hard so it never turns into a free win.
-// In an era the equal start (eraEqualize) comes first and this bonus is only a quarter as big.
-function startBoost(n,own,t0,d){
-  const nb=new Set();for(const r of natRegions[n])for(const j of R0[r].nb)if(R0[j].n0!==n)nb.add(R0[j].n0);
-  const ts=[...nb].filter(x=>natRegions[x].length).map(x=>t0[x]).sort((a,b)=>b-a);
-  const thr=(ts[0]||0)+.3*(ts[1]||0),ratio=thr/Math.max(1,own);
-  if(ratio<=4)return {f:1,fl:0};
-  const x=clamp(Math.log2(ratio/4)/Math.log2(20),0,1);
-  return {f:1+[.2,.35,.5][d]*x,fl:[800,1300,2000][d]*x}}
-function boostNation(Nn,f,fl){
-  if(f<=1&&Nn.t>=fl)return;f=Math.max(1,f);const g=Math.max(f,Nn.t>0?fl/Nn.t:1);
-  Nn.a=Nn.a.map(v=>Math.round(v*g));Nn.ka=Nn.ka.map(v=>Math.round(v*f));Nn.t=Nn.a.reduce((x,y)=>x+y,0);
-  Nn.k.tk=Nn.ka.reduce((x,y)=>x+y,0);for(const id of ['jt','sh','bm'])Nn.k[id]=Math.round((Nn.k[id]||0)*f);Nn.m=+(Nn.m*(1+(f-1)*.5)).toFixed(3)}
 function initialState(o){
   const R={o:new Array(NR),p:P0.map(v=>+v.toFixed(4)),g:G0.map(v=>+v.toFixed(4))};
   R0.forEach(r=>R.o[r.i]=r.n0);
@@ -1033,13 +1019,13 @@ function initialState(o){
     const rd=ERA?((ERA.res0||[]).find(x=>x[0]===n)||[]).slice(1).filter(resOK):RES0[d.k]||[];const done={};rd.forEach(id=>done[id]=1);Object.assign(k,{dr:done.dr?Math.round(d.bud*.6+10):0,kr:done.kr?Math.round(d.bud*.08+4):0,bb:0,emp:0});
     return {m:+(d.bud*.6+d.gdp*.01).toFixed(3),t:a.reduce((x,y)=>x+y,0),a,ka,u,k,rs:{done,cur:null},hit:0,dead:natRegions[n].length?0:1}});
   const order=[],hum={};
-  const ST=MODES[o.diff??1].st;const t0=N.map(x=>x.t),dd=clamp(o.diff??1,0,2);
+  const ST=MODES[o.diff??1].st;const dd=clamp(o.diff??1,0,2);
   o.humans.forEach((h,k)=>{order.push(h.nation);hum[h.nation]={nick:h.nick,uid:h.uid||null};const Nn=N[h.nation];Nn.h=1;Nn.col=h.color||PALETTE[k%PALETTE.length];Nn.seen=0;Nn.rk=0;
-    if(!ST){Nn.rep=0;eraEqualize(h.nation,Nn,N,dd);const B=startBoost(h.nation,Nn.t,t0,dd);boostNation(Nn,1+(B.f-1)*.25,0);Nn.t0=Nn.t;return}
+    if(!ST){Nn.rep=0;eraEqualize(h.nation,Nn,N,dd);Nn.t0=Nn.t;return}
     // same start for every country on this difficulty: army and tanks spread like before, but scaled to the same total
     const d=NAT[h.nation],cst=natRegions[h.nation].some(i=>R0[i].coast);const ft=ST.t/Math.max(1,Nn.t),fk=ST.tk/Math.max(1,Nn.k.tk);
     if(Nn.t>0){Nn.a=Nn.a.map(v=>Math.round(v*ft));Nn.ka=Nn.ka.map(v=>Math.round(v*fk))}else{Nn.a[CAPC[h.nation]]=ST.t;Nn.ka[CAPC[h.nation]]=ST.tk}
-    Nn.t=Nn.a.reduce((x,y)=>x+y,0);Nn.k=Object.assign(KIT0(),{tk:Nn.ka.reduce((x,y)=>x+y,0),jt:ST.jt,sh:cst?ST.sh:0,bm:ST.bm});Nn.m=ST.m;Nn.rs={done:{},cur:null};Nn.rep=0;{const B=startBoost(h.nation,Nn.t,t0,dd);boostNation(Nn,B.f,0)}
+    Nn.t=Nn.a.reduce((x,y)=>x+y,0);Nn.k=Object.assign(KIT0(),{tk:Nn.ka.reduce((x,y)=>x+y,0),jt:ST.jt,sh:cst?ST.sh:0,bm:ST.bm});Nn.m=ST.m;Nn.rs={done:{},cur:null};Nn.rep=0;
     Nn.u=new Array(UPG.length).fill(0);Nn.u[U.ma]=cst?1:0;Nn.u[U.on]=1;Nn.u[U.in]=1;
     // a poor or tiny home country counts as bigger, a rich or crowded one as smaller (only for its own original land),
     // so every country on one difficulty has almost the same income and manpower
@@ -1066,17 +1052,13 @@ function eraEqualize(n,Nn,N,dd){
   const [lo,hi]=[.92,1.1];   // tight: two players on one difficulty never start far apart
   const cmp=(v,ref)=>ref>0?clamp(Math.pow(Math.max(v,ref*.01),.3)*Math.pow(ref,.7),ref*lo,ref*hi):v;
   const d=NAT[n],K=Nn.k;
-  // a strong neighbour (over land or a short sea crossing) gives a little extra army, at most +15%, so the start stays fair between players
-  const nb=new Set();for(const r of natRegions[n])for(const j of R0[r].nb)if(R0[j].n0!==n)nb.add(R0[j].n0);
-  for(const r of natRegions[n]){if(!R0[r].coast)continue;for(const x of COAST)if(R0[x].n0!==n&&dist(r,x)<40)nb.add(R0[x].n0)}
-  let big=0;for(const x of nb)if(natRegions[x]&&natRegions[x].length)big=Math.max(big,N[x].t);
-  const tR=med(i=>N[i].t),t0=cmp(Nn.t,tR),t=Math.max(t0,Math.min(t0*1.15,big*[.5,.35,.22][dd])),raise=Math.max(1,t/Math.max(1,t0));
+  const tR=med(i=>N[i].t),t=cmp(Nn.t,tR),raise=1;   // no bonus for strong neighbours
   if(Nn.t>0){const f=t/Nn.t;Nn.a=Nn.a.map(v=>Math.round(v*f))}else Nn.a[CAPC[n]]=Math.round(t);
   const tkR=med(i=>N[i].k.tk),tk=Math.round(cmp(K.tk,tkR)*raise);const st=K.tk;
   if(st>0){Nn.ka=Nn.ka.map(v=>Math.round(v*tk/st))}else Nn.ka[CAPC[n]]=tk;
   Nn.t=Nn.a.reduce((x,y)=>x+y,0);K.tk=Nn.ka.reduce((x,y)=>x+y,0);
   for(const id of ['jt','bm','sh']){if(id==='sh'&&!natRegions[n].some(i=>R0[i].coast))continue;K[id]=Math.round(cmp(K[id]||0,med(i=>N[i].k[id]||0))*raise)}
-  const sr=Math.sqrt(raise);   // a country that got a bigger army to stand up to its neighbour also gets a bit more economy to keep it going
+  const sr=Math.sqrt(raise);
   Nn.qi=+(cmp(d.gdp,med(i=>NAT[i].gdp))*sr/Math.max(1e-6,d.gdp)).toFixed(4);
   Nn.qp=+(cmp(d.pop,med(i=>NAT[i].pop))*raise/Math.max(1e-6,d.pop)).toFixed(4);
   Nn.m=+(cmp(Math.max(Nn.m,d.gdp*.03),med(i=>Math.max(N[i].m,NAT[i].gdp*.03)))*sr).toFixed(4)}
