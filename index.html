@@ -284,6 +284,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:22px;background:var(--ink)
 .lobby .clist2{grid-template-columns:1fr 1fr}
 .cbtn .cs{margin-left:auto;display:inline-flex;align-items:center;gap:3px;font-size:12.5px;color:var(--mute);font-variant-numeric:tabular-nums;flex:none}.cbtn .cs svg{width:13px;height:13px}.cbtn.on .cs{color:inherit;opacity:.8}.cbtn .cs+.grm{margin-left:2px}
 @media (min-width:900px) and (min-height:500px){.screen.lobby{--lbg:#0a0b0c;right:auto;width:min(430px,42vw);background:#0a0b0cf0;border-right:1px solid var(--line2);box-shadow:8px 0 30px #0008}}
+.random-box{display:flex;gap:12px;align-items:center;border:1px solid var(--line2);border-radius:var(--r);padding:14px;font-size:15px;line-height:1.4;background:var(--panel)}.random-box svg{width:34px;height:34px;flex:none;color:var(--brass2,var(--amber))}
 .code{font-family:var(--f-disp);font-weight:700;font-size:44px;line-height:1;letter-spacing:.16em;color:var(--ink)}
 .handoff{margin:auto;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
 
@@ -711,6 +712,7 @@ const MODES=[
  {get nm(){return $t('Moeilijk','Hard')},get sub(){return $t('Kleine landen tussen grote buren of ver weg. Geen bonus, een kleiner leger en de wereld is agressiever.','Small countries between big neighbours or far away. No bonus, a smaller army and the world is more aggressive.')},pool:['Ireland','Portugal','New Zealand','Paraguay','Mongolia','Georgia','Ghana','Senegal','Zambia','Laos','Honduras','El Salvador','Nicaragua','Kyrgyzstan','Tajikistan','Namibia','Botswana','Mozambique','Madagascar','Albania','Suriname','Bhutan','Liberia','Sierra Leone','Eritrea','Malawi'],pick:9,atk:1,reinf:1,agg:1.3,safe:1,def:1,grace:2,ur:1.25,nk:1.4,eg:280,ep:9,st:{t:27000,tk:85,jt:28,sh:6,bm:10,m:18}},
 ];
 
+const modePool=i=>{const m=MODES[i];return [...new Set((ERA?m.ePool||m.ids:m.pool.map(nIdx)).filter(x=>x>=0&&natRegions[x]&&natRegions[x].length))]};
 function shuffleModes(seed){
   MODES.forEach(m=>{
     const all=(ERA?m.ePool:m.pool.map(nIdx)).filter(i=>i>=0&&natRegions[i].length);
@@ -2390,7 +2392,7 @@ function sfx(k){if(!SND.on)return;try{if(!SND.ac)SND.ac=new (window.AudioContext
 /* ================= in-game UI ================= */
 function onTap(x,y){
   if(!G||BATTLE)return;const r=regionAt(x,y);
-  if(PICK){if(r<0)return;const n=G.R.o[r];const ps=pickSet();if(!ps){toast($t('Kies eerst een moeilijkheid','Pick a difficulty first'));return}PICK.peek=n;req();if(PICK.onPick&&ps.has(n)){PICK.onPick(n);return}if(!ps.has(n)){toast($t(`${esc(baseName(NAT[n]))} (${fmtT(A(n).a[CONT[r]])} soldaten in ${CONTS[CONT[r]]}) kun je niet kiezen in ${MODES[PICK.diff].nm}. Kies een land met een witte rand.`,`${esc(baseName(NAT[n]))} (${fmtT(A(n).a[CONT[r]])} soldiers in ${CONTS[CONT[r]]}) cannot be picked in ${MODES[PICK.diff].nm}. Pick a country with a white outline.`));return}PICK.cur=n;bordersDirty=true;renderPick();req();return}
+  if(PICK){if(r<0)return;const n=G.R.o[r];const ps=pickSet();if(!ps){if(!PICK.lobby)toast($t('Kies eerst een moeilijkheid','Pick a difficulty first'));return}PICK.peek=n;req();if(PICK.onPick&&ps.has(n)){PICK.onPick(n);return}if(!ps.has(n)){toast($t(`${esc(baseName(NAT[n]))} (${fmtT(A(n).a[CONT[r]])} soldaten in ${CONTS[CONT[r]]}) kun je niet kiezen in ${MODES[PICK.diff].nm}. Kies een land met een witte rand.`,`${esc(baseName(NAT[n]))} (${fmtT(A(n).a[CONT[r]])} soldiers in ${CONTS[CONT[r]]}) cannot be picked in ${MODES[PICK.diff].nm}. Pick a country with a white outline.`));return}PICK.cur=n;bordersDirty=true;renderPick();req();return}
   if(G.pv)return;
   hudClose();
   {const a=SELARR.find(a=>Math.hypot(a.x-x,a.y-y)<22);if(a){flyTo(a.wx,a.wy,Math.max(cam.s,3));return}}
@@ -3268,18 +3270,21 @@ function enterLobby(code){
     const g=NET.game;if(!g||screen!==s)return;const M=MODES[g.diff??1];
     const taken=new Set(NET.players.filter(p=>p.id!==NET.uid&&p.nation>=0).map(p=>p.nation));
     {const me=NET.players.find(p=>p.id===NET.uid);if(me&&myPick<0&&me.nation>=0)myPick=me.nation}
-    const hist=g.hist!==false,dif=g.diff??1;
-    if(PICK&&PICK.lobby){PICK.diff=dif;PICK.opts.hist=hist;PICK.cur=myPick;PICK.players=[...taken].map(n=>({nation:n}));bordersDirty=true;req()}
-    s.querySelector('#lp').innerHTML=NET.players.map((p,i)=>`<div class="pl"><i style="background:${PALETTE[i%PALETTE.length]}"></i><b>${esc(p.nick)}</b>${p.id===g.host?' <span class="note">host</span>':''}<span class="r">${p.nation>=0?esc(baseName(NAT[p.nation])):$t('kiest…','picking…')}</span></div>`).join('');
+    const hist=g.hist!==false,dif=g.diff??1,rnd=!!g.rnd;
+    if(PICK&&PICK.lobby){PICK.diff=rnd?-1:dif;PICK.opts.hist=hist;PICK.cur=myPick;PICK.players=[...taken].map(n=>({nation:n}));bordersDirty=true;req()}
+    s.querySelector('#lp').innerHTML=NET.players.map((p,i)=>`<div class="pl"><i style="background:${PALETTE[i%PALETTE.length]}"></i><b>${esc(p.nick)}</b>${p.id===g.host?' <span class="note">host</span>':''}<span class="r">${rnd?$t('willekeurig land','random country'):p.nation>=0?esc(baseName(NAT[p.nation])):$t('kiest…','picking…')}</span></div>`).join('');
     const ho=s.querySelector('#hostOpts');
-    ho.innerHTML=`<div class="lbl">${$t('Modus','Mode')}</div><div class="chips">${MODES.map((m,i)=>`<button class="chip diff${i} ${i===(g.diff??1)?'on':''}" data-d="${i}" ${isHost()?'':'disabled'}>${m.nm}</button>`).join('')}</div>${isHost()?`<div class="lbl">${$t('Speelduur','Game length')}</div><div class="chips">${DUR_OPTS.map(v=>`<button class="chip ${g.maxR===v?'on':''}" data-r="${v}">${v?fmtMonths(v):$t('Onbeperkt','Unlimited')}</button>`).join('')}</div><div class="lbl">${$t('Tijd per beurt','Time per turn')}</div><div class="chips">${TLO().map(([v,l])=>`<button class="chip ${(g.tl??90)===v?'on':''}" data-tl="${v}">${l}</button>`).join('')}</div>`:''}<div class="lbl">${$t('Startsituatie','Starting situation')}</div><div class="chips">${[[1,histLbl(1)],[0,histLbl(0)]].map(([v,l])=>`<button class="chip ${(g.hist!==false)===!!v?'on':''}" data-hs="${v}" ${isHost()?'':'disabled'}>${l}</button>`).join('')}</div><div class="note">${histNote(g.hist!==false)}</div>`;
+    ho.innerHTML=`<div class="lbl">${$t('Modus','Mode')}</div><div class="chips">${MODES.map((m,i)=>`<button class="chip diff${i} ${i===(g.diff??1)?'on':''}" data-d="${i}" ${isHost()?'':'disabled'}>${m.nm}</button>`).join('')}</div>${isHost()?`<div class="lbl">${$t('Speelduur','Game length')}</div><div class="chips">${DUR_OPTS.map(v=>`<button class="chip ${g.maxR===v?'on':''}" data-r="${v}">${v?fmtMonths(v):$t('Onbeperkt','Unlimited')}</button>`).join('')}</div><div class="lbl">${$t('Tijd per beurt','Time per turn')}</div><div class="chips">${TLO().map(([v,l])=>`<button class="chip ${(g.tl??90)===v?'on':''}" data-tl="${v}">${l}</button>`).join('')}</div>`:''}<div class="lbl">${$t('Startsituatie','Starting situation')}</div><div class="chips">${[[1,histLbl(1)],[0,histLbl(0)]].map(([v,l])=>`<button class="chip ${(g.hist!==false)===!!v?'on':''}" data-hs="${v}" ${isHost()?'':'disabled'}>${l}</button>`).join('')}</div><div class="note">${histNote(g.hist!==false)}</div><div class="lbl">${$t('Landkeuze','Country')}</div><div class="chips">${[[0,$t('Zelf kiezen','Pick yourself')],[1,$t('Willekeurig','Random')]].map(([v,l])=>`<button class="chip ${rnd===!!v?'on':''}" data-rn="${v}" ${isHost()?'':'disabled'}>${l}</button>`).join('')}</div>`;
+    ho.querySelectorAll('[data-rn]').forEach(b=>b.onclick=()=>NET.db.doc('games/'+code).update({rnd:b.dataset.rn==='1'}).catch(()=>{}));
     ho.querySelectorAll('[data-hs]').forEach(b=>b.onclick=()=>NET.db.doc('games/'+code).update({hist:b.dataset.hs==='1'}).catch(()=>{}));
     ho.querySelectorAll('[data-tl]').forEach(b=>b.onclick=()=>NET.db.doc('games/'+code).update({tl:+b.dataset.tl}).catch(()=>{}));
     ho.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>NET.db.doc('games/'+code).update({diff:+b.dataset.d}).catch(()=>{}));
     ho.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>NET.db.doc('games/'+code).update({maxR:+b.dataset.r}).catch(()=>{}));
     s.querySelector('#lGo').hidden=!isHost();
-    s.querySelector('#lWait').textContent=isHost()?$t('Start zodra iedereen een land heeft gekozen.','Start when everyone has picked a country.'):$t('Wachten tot de host het spel start…','Waiting for the host to start the game…');
-    const L=s.querySelector('#lpick');L.innerHTML=`<h3>${$t('Kies je land','Pick your country')} (${M.nm})</h3><div class="note">${M.sub} ${$t('Het getal is het aantal soldaten bij de start.','The number is the soldiers at the start.')}</div>${countryBtns(M.ids,myPick,taken,n=>pickStart(n,dif,hist).t)}`;
+    s.querySelector('#lWait').textContent=isHost()?(rnd?$t('Start zodra iedereen er is.','Start when everyone is here.'):$t('Start zodra iedereen een land heeft gekozen.','Start when everyone has picked a country.')):$t('Wachten tot de host het spel start…','Waiting for the host to start the game…');
+    const L=s.querySelector('#lpick');
+    if(rnd){L.innerHTML=`<h3>${$t('Willekeurig land','Random country')} (${M.nm})</h3><div class="random-box">${svgI('globe')}<div>${$t(`Iedereen krijgt een willekeurig land uit <b>${esc(M.nm)}</b> (${modePool(dif).length} landen mogelijk). Pas als het spel begint zie je welk land je bent.`,`Everyone gets a random country from <b>${esc(M.nm)}</b> (${modePool(dif).length} possible countries). You only find out which one when the game starts.`)}</div></div><div class="note">${M.sub}</div>`;return}
+    L.innerHTML=`<h3>${$t('Kies je land','Pick your country')} (${M.nm})</h3><div class="note">${M.sub} ${$t('Het getal is het aantal soldaten bij de start.','The number is the soldiers at the start.')}</div>${countryBtns(M.ids,myPick,taken,n=>pickStart(n,dif,hist).t)}`;
     L.querySelectorAll('.cbtn').forEach(b=>b.onclick=()=>pickN(+b.dataset.n));
   };
   const pickN=n=>{
@@ -3289,11 +3294,17 @@ function enterLobby(code){
     renderLobby();if(wide())focusNation(n,s.offsetWidth/2);
   };
   s.querySelector('#lGo').onclick=async()=>{
-    const ps=NET.players;const ns=ps.map(p=>p.nation);const M=MODES[NET.game.diff??1];
-    if(ps.some(p=>p.nation<0||!M.ids.includes(p.nation))){s.querySelector('#lErr').textContent=$t('Nog niet iedereen heeft een land uit deze modus gekozen.','Not everyone has picked a country from this mode yet.');return}
+    let ps=NET.players;const M=MODES[NET.game.diff??1];
+    if(NET.game.rnd){ // random countries: shuffle the whole difficulty and hand them out
+      let pool=modePool(NET.game.diff??1);if(pool.length<ps.length)pool=[...Array(NN).keys()].filter(i=>natRegions[i].length);
+      for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+      ps=ps.map((p,i)=>({...p,nation:pool[i]}));
+    }
+    const ns=ps.map(p=>p.nation);
+    if(!NET.game.rnd&&ps.some(p=>p.nation<0||!M.ids.includes(p.nation))){s.querySelector('#lErr').textContent=$t('Nog niet iedereen heeft een land uit deze modus gekozen.','Not everyone has picked a country from this mode yet.');return}
     if(new Set(ns).size!==ns.length){s.querySelector('#lErr').textContent=$t('Twee spelers hebben hetzelfde land gekozen.','Two players picked the same country.');return}
     const g=NET.game;G=initialState({mode:'online',code,humans:ps.map((p,i)=>({nick:p.nick,nation:p.nation,uid:p.id,color:PALETTE[i%PALETTE.length]})),maxR:g.maxR,diff:g.diff??1,tl:g.tl??90,hist:g.hist!==false});
-    startTurn(G.order[0]);recordHist();addLog($b('Het online spel is begonnen!','The online game has started!'),[],'info');G.order.forEach(n=>{G.N[n].seen=G.lc;G.N[n].ap=G.N[n].ap||apMax(n)});
+    if(NET.game.rnd)G.rnd=1;startTurn(G.order[0]);recordHist();addLog($b('Het online spel is begonnen!','The online game has started!'),[],'info');G.order.forEach(n=>{G.N[n].seen=G.lc;G.N[n].ap=G.N[n].ap||apMax(n)});
     try{await NET.db.doc('games/'+code).update({status:'playing',state:JSON.stringify(G),rev:G.rev})}catch(e){s.querySelector('#lErr').textContent=$t('Starten lukte niet: ','Could not start: ')+(e.message||e)}
   };
   const timer=setTimeout(()=>{const w=s.querySelector('#lWait');if(w&&!NET.game)w.textContent=$t('De server reageert nog niet…','The server is not responding yet…')},10000);
@@ -3361,7 +3372,7 @@ function applyRemote(json){
   G=st;ME=-1;for(const n in G.hum)if(G.hum[n].uid===NET.uid)ME=+n;
   if(first)NET.playing=true;
   DIP=null;dirty();
-  if(first){startPlaying();return}
+  if(first){startPlaying();if(G.rnd&&G.round===1&&ME>=0)setTimeout(()=>{sfx('win');toast($t(`<b>Jouw willekeurige land: ${esc(natName(ME))}!</b>`,`<b>Your random country: ${esc(natName(ME))}!</b>`),'win')},900);return}
   renderPanel();updateHud();req();if(G.over){gameOver();return}
   if(myTurn()&&!wasMine){toast($t('<b>Jij bent aan zet!</b>','<b>Your turn!</b>'),'win');beginMyTurn()}
 }
