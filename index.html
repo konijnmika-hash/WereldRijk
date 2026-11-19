@@ -497,6 +497,19 @@ input[type=range]::-moz-range-thumb{width:12px;height:22px;background:var(--ink)
 .lbl.li.s-war svg{color:var(--amber)}.lbl.li.s-al svg{color:var(--blue)}.lbl.li.s-tr svg{color:var(--green)}
 .dlist.s-war{--sc:var(--amber)}.dlist.s-al{--sc:var(--blue)}.dlist.s-tr{--sc:var(--green)}
 .dlist[class*=s-] .drow{box-shadow:inset 2px 0 var(--sc);padding-left:10px}
+/* ---- online chat ---- */
+#chatBtn{position:relative;height:48px;min-width:48px;padding:0}#chatBtn svg{width:20px;height:20px}
+#chatBtn .bd,.lchat .bd{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--amber);color:#111;font:700 11px/18px var(--f-disp);padding:0 4px;box-sizing:border-box;text-align:center}
+.lchat{position:relative}
+#chatbox{position:absolute;right:max(10px,var(--sr));bottom:calc(68px + var(--sb));z-index:35;width:min(340px,calc(100% - 20px));height:min(380px,calc(100% - var(--bar) - 90px - var(--st) - var(--sb)));min-height:180px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);display:flex;flex-direction:column;box-shadow:0 8px 30px #000a;overflow:hidden}
+#chatbox[hidden]{display:none}
+#chatbox .ch{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border-bottom:1px solid var(--line);font-family:var(--f-disp);font-weight:700;letter-spacing:.04em}
+#chatbox .ch .x{margin-left:auto;background:none;border:0;color:var(--ink);height:32px;width:32px;display:flex;align-items:center;justify-content:center}#chatbox .ch .x svg{width:18px;height:18px}
+#chatbox .cl{flex:1;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:6px;font-size:14px;-webkit-overflow-scrolling:touch}
+#chatbox .cm{line-height:1.35;overflow-wrap:anywhere}#chatbox .cm b{margin-right:5px}#chatbox .cm small{opacity:.55;margin-left:6px;font-size:11px}
+#chatbox .cm.me{text-align:right}#chatbox .empty{opacity:.6;margin:auto;text-align:center;font-size:13px}
+#chatbox form{display:flex;gap:6px;padding:8px;border-top:1px solid var(--line)}#chatbox input{flex:1;min-width:0}#chatbox form .btn{flex:none;padding:0 14px}
+@media (max-height:430px){#chatBtn{height:42px;min-width:42px}#chatbox{bottom:calc(60px + var(--sb))}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -528,11 +541,12 @@ input[type=range]::-moz-range-thumb{width:12px;height:22px;background:var(--ink)
     <button class="ibtn" id="zHome" aria-label="Naar mijn rijk"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></button>
   </div>
   <div id="hint">Tik op een land om aan te vallen</div>
-  <div id="dock"><div id="timer" hidden aria-live="polite"></div><button id="endTurn">Einde beurt</button></div>
+  <div id="dock"><button class="ibtn" id="chatBtn" hidden aria-label="Chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></button><div id="timer" hidden aria-live="polite"></div><button id="endTurn">Einde beurt</button></div>
   <div id="warbox" hidden></div>
   <div id="goalbox" hidden></div>
   <aside id="panel"></aside>
   <div id="toasts"></div>
+  <div id="chatbox" hidden role="dialog" aria-label="Chat"></div>
   <div id="rotate"><div class="ph"></div><div style="font-family:var(--f-disp);font-size:22px">Draai je telefoon</div><div class="note">Wereldrijk speel je liggend.</div></div>
 </div>
 
@@ -2762,6 +2776,7 @@ function renderWarbox(){const W=$('#warbox');if(!G||G.pv||ME<0||G.N[ME].dead){W.
   W.querySelector('#wbT').onclick=()=>{WB_OPEN=!WB_OPEN;if(hudC()){if(WB_OPEN&&GB_OPEN){GB_OPEN=false;renderGoals()}}else try{localStorage.setItem('wr-wb',WB_OPEN?'1':'0')}catch(e){}renderWarbox()};
   W.querySelectorAll('[data-wn]').forEach(b=>b.onclick=()=>{const n=+b.dataset.wn;selC=-1;hudClose();selectNation(n);focusNation(n)})}
 function updateHud(){
+  chatUi();
   if(!G||G.pv){$('#warbox').hidden=true;$('#goalbox').hidden=true;return}renderWarbox();renderGoals();const s=stats();const n=ME>=0?ME:curNation();
   $('#empName').textContent=natName(n);$('#empRank').textContent=RANKS[rankOf(n)].nm;$('#empSw').style.background=natColor(n);
   $('#sMoney').textContent=fmtMoney(G.N[n].m);const net=s[n].inc-s[n].upk;$('#sInc').textContent=(net>=0?'+':'')+fmtMoney(net);$('#sTroops').textContent=fmtT(s[n].troops);$('#sPop').textContent=fmtPop(s[n].pop);
@@ -2774,6 +2789,7 @@ function updateHud(){
   updateHint();
 }
 function canAct(){const N=G.N[ME];if(!N.ap)return false;if(UPG.some((u,i)=>N.u[i]<u.max&&upCost(ME,i)<=N.m))return true;for(const c of nbrs()[ME])if(!allied(ME,c))return true;return false}
+$('#chatBtn').onclick=chatToggle;
 $('#endTurn').onclick=()=>{
   if(!myTurn()||BATTLE)return;const N=G.N[ME];
   if(N.ap>0&&canAct()){openSheet(`<h3>${$t('Beurt beëindigen?','End your turn?')}</h3><div class="note" style="font-size:15px;color:var(--ink)">${N.acted?$t(`Je hebt nog ${N.ap} ${N.ap===1?'bevel':'bevelen'} over. Die vervallen als je nu stopt.`,`You have ${N.ap} ${N.ap===1?'order':'orders'} left. They are lost if you stop now.`):$t('Je hebt deze maand nog niets gedaan. Je kunt aanvallen, bouwen of diplomatie voeren. Wachten mag ook: je leger groeit gewoon door.','You have not done anything this month. You can attack, build or use diplomacy. Waiting is fine too: your army keeps growing.')}</div><div class="row"><button class="btn ghost" id="eC">${$t('Verder spelen','Keep playing')}</button><button class="btn pri" style="flex:1" id="eGo">${$t('Einde beurt','End turn')}</button></div>`,s=>{s.querySelector('#eC').onclick=closeSheet;s.querySelector('#eGo').onclick=()=>{closeSheet();doEndTurn()}});return}
@@ -3219,14 +3235,15 @@ async function showOnline(){
       await NET.db.doc(`games/${code}/players/${NET.uid}`).set({nick:n,nation:-1,joined:Date.now()});enterLobby(code)}
     catch(e){s.querySelector('#oErr').textContent=$t('Meedoen lukte niet: ','Could not join: ')+(e&&e.message||e)}};
 }
-function leaveOnline(){NET.playing=false;if(NET.unsubG){NET.unsubG();NET.unsubG=null}if(NET.unsubP){NET.unsubP();NET.unsubP=null}NET.code=null;NET.game=null}
+function leaveOnline(){chatStop();NET.playing=false;if(NET.unsubG){NET.unsubG();NET.unsubG=null}if(NET.unsubP){NET.unsubP();NET.unsubP=null}NET.code=null;NET.game=null}
 function enterLobby(code){
-  leaveOnline();NET.code=code;NET.players=[];activeSet(code);
+  leaveOnline();NET.code=code;NET.players=[];activeSet(code);chatStart(code);
   {let h=0;for(let i=0;i<code.length;i++)h=(h*31+code.charCodeAt(i))|0;shuffleModes(h)}
   const s=setScreen(`<div class="setup"><div class="col"><div class="lbl">${$t('Spelcode, deel deze met je vrienden','Game code, share it with your friends')}</div><div class="code">${code}</div>
      <div id="hostOpts"></div><div class="lbl">${$t('Spelers','Players')}</div><div class="plist" id="lp"></div><div style="flex:1"></div><div class="err" id="lErr"></div>
-     <div class="row"><button class="btn ghost" id="lBack">${bi('exit',$t('Verlaten','Leave'))}</button><button class="btn pri" style="flex:1" id="lGo" hidden>${bi('play',$t('Start spel','Start game'))}</button></div><div class="note" id="lWait"></div></div><div class="col" id="lpick"></div></div>`,true);
+     <div class="row"><button class="btn ghost" id="lBack">${bi('exit',$t('Verlaten','Leave'))}</button><button class="btn lchat" id="lChat" aria-label="Chat"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round"><path d="M4 5h16v11H9l-5 4z"/></svg> Chat<span class="bd" hidden></span></button><button class="btn pri" style="flex:1" id="lGo" hidden>${bi('play',$t('Start spel','Start game'))}</button></div><div class="note" id="lWait"></div></div><div class="col" id="lpick"></div></div>`,true);
   s.querySelector('#lBack').onclick=()=>{activeClear();leaveOnline();showOnline()};
+  s.querySelector('#lChat').onclick=chatToggle;
   let myPick=-1;
   const isHost=()=>NET.game&&NET.game.host===NET.uid;
   const renderLobby=()=>{
@@ -3256,6 +3273,56 @@ function enterLobby(code){
   NET.unsubP=NET.db.collection(`games/${code}/players`).onSnapshot(snap=>{NET.players=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.joined-b.joined);if(G&&G.mode==='online')return;renderLobby()},e=>{});
   NET.unsubG=NET.db.doc('games/'+code).onSnapshot(snap=>{clearTimeout(timer);if(!snap.exists)return;const d=snap.data();if((d.era||'')!==(ERA?ERA.id:'')){leaveOnline();location.href=eraUrl(d.era||'',{join:code});return}NET.game=d;
     if(d.status==='playing'&&d.state)applyRemote(d.state);else renderLobby()},e=>{const w=s.querySelector('#lErr');if(w)w.textContent=$t('Verbinding verbroken.','Connection lost.')});
+}
+/* ---- chat: every player keeps their own last messages in games/<code>/chat/<uid>, so writes never clash ---- */
+const CHAT={on:null,msgs:[],mine:[],seen:0,open:false,code:null};
+function chatSeenKey(){return 'wr-chatseen-'+CHAT.code+'-'+NET.uid}
+function chatStart(code){
+  chatStop();if(!NET.db)return;CHAT.code=code;CHAT.msgs=[];CHAT.mine=[];
+  try{CHAT.seen=+localStorage.getItem(chatSeenKey())||0}catch(e){CHAT.seen=0}
+  try{CHAT.on=NET.db.collection(`games/${code}/chat`).onSnapshot(snap=>{
+    const all=[];snap.docs.forEach(d=>{const v=d.data()||{};(v.m||[]).forEach(m=>{if(m&&typeof m.x==='string')all.push({uid:d.id,nick:String(v.nick||'?').slice(0,16),col:v.col||'',t:+m.t||0,x:m.x.slice(0,300)})});if(d.id===NET.uid&&!CHAT.mine.length)CHAT.mine=(v.m||[]).slice(-30)});
+    all.sort((a,b)=>a.t-b.t);
+    const fresh=all.filter(m=>m.t>CHAT.seen&&m.uid!==NET.uid&&!CHAT.msgs.some(o=>o.t===m.t&&o.uid===m.uid));
+    CHAT.msgs=all.slice(-80);
+    if(CHAT.open)chatMarkSeen();else if(fresh.length&&CHAT.ready)fresh.slice(-2).forEach(m=>toast(`<b>${esc(m.nick)}:</b> ${esc(m.x.length>80?m.x.slice(0,80)+'…':m.x)}`,'info'));
+    CHAT.ready=true;chatRender();chatUi()},e=>{})}catch(e){}
+}
+function chatStop(){if(CHAT.on){try{CHAT.on()}catch(e){}}CHAT.on=null;CHAT.msgs=[];CHAT.mine=[];CHAT.ready=false;CHAT.code=null;chatClose()}
+function chatUnread(){return CHAT.msgs.filter(m=>m.t>CHAT.seen&&m.uid!==NET.uid).length}
+function chatMarkSeen(){const t=CHAT.msgs.length?CHAT.msgs[CHAT.msgs.length-1].t:0;if(t>CHAT.seen){CHAT.seen=t;try{localStorage.setItem(chatSeenKey(),t)}catch(e){}}chatUi()}
+function chatUi(){
+  const show=!!(CHAT.code&&G&&G.mode==='online'&&!G.pv&&NET.playing);const b=$('#chatBtn');if(!b)return;b.hidden=!show;
+  const u=chatUnread();
+  const put=(host)=>{if(!host)return;let d=host.querySelector('.bd');if(!d){d=el('span',{class:'bd'},'');host.appendChild(d)}d.hidden=!u;d.textContent=u>9?'9+':u};
+  put(b);put(screen&&screen.querySelector('#lChat'));
+}
+function chatColor(uid){const ps=NET.players||[];const i=ps.findIndex(p=>p.id===uid);if(G&&G.hum)for(const n in G.hum)if(G.hum[n].uid===uid)return natColor(+n);return i>=0?PALETTE[i%PALETTE.length]:'var(--ink)'}
+function chatRender(){
+  const box=$('#chatbox');if(!box||box.hidden)return;const L=box.querySelector('.cl');if(!L)return;
+  const atEnd=L.scrollHeight-L.scrollTop-L.clientHeight<40;
+  const tm=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+  L.innerHTML=CHAT.msgs.length?CHAT.msgs.map(m=>`<div class="cm${m.uid===NET.uid?' me':''}"><b style="color:${esc(chatColor(m.uid))}">${esc(m.nick)}</b>${esc(m.x)}<small>${tm(m.t)}</small></div>`).join(''):`<div class="empty">${$t('Nog geen berichten. Zeg hallo!','No messages yet. Say hello!')}</div>`;
+  if(atEnd||!L.dataset.init){L.scrollTop=L.scrollHeight;L.dataset.init=1}
+}
+function chatOpen(){
+  const box=$('#chatbox');if(!box||!CHAT.code)return;CHAT.open=true;box.hidden=false;
+  box.innerHTML=`<div class="ch">Chat<button class="x" aria-label="${$t('Sluiten','Close')}"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="cl"></div><form><input type="text" maxlength="300" enterkeyhint="send" autocomplete="off" placeholder="${$t('Typ een bericht…','Type a message…')}" aria-label="${$t('Bericht','Message')}"><button class="btn pri" type="submit">${$t('Stuur','Send')}</button></form>`;
+  box.querySelector('.x').onclick=chatClose;
+  const inp=box.querySelector('input');
+  box.querySelector('form').onsubmit=e=>{e.preventDefault();const x=inp.value.trim();if(!x)return;inp.value='';chatSend(x);inp.focus()};
+  box.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape')chatClose()});
+  chatRender();chatMarkSeen();setTimeout(()=>inp.focus(),30);
+}
+function chatClose(){CHAT.open=false;const box=$('#chatbox');if(box){box.hidden=true;box.innerHTML=''}}
+function chatToggle(){CHAT.open?chatClose():chatOpen()}
+async function chatSend(x){
+  if(!NET.db||!CHAT.code)return;
+  let nick=((NET.players||[]).find(p=>p.id===NET.uid)||{}).nick||nickGet()||'?';if(G&&G.mode==='online'&&ME>=0&&G.hum[ME])nick=G.hum[ME].nick||nick;
+  const t=Math.max(Date.now(),(CHAT.mine.length?CHAT.mine[CHAT.mine.length-1].t+1:0));
+  CHAT.mine=CHAT.mine.concat([{t,x:x.slice(0,300)}]).slice(-30);
+  try{await NET.db.doc(`games/${CHAT.code}/chat/${NET.uid}`).set({nick:nick.slice(0,16),m:CHAT.mine})}
+  catch(e){toast($t('Bericht versturen mislukt: ','Sending message failed: ')+esc(e.message||e),'lose')}
 }
 function applyRemote(json){
   let st;try{st=migrate(JSON.parse(json))}catch(e){return}
